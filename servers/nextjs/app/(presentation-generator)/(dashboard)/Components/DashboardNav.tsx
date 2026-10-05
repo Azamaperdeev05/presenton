@@ -5,39 +5,38 @@ import Link from 'next/link';
 import React, { } from 'react'
 import { defaultNavItems } from './DashboardSidebar';
 import { usePathname } from 'next/navigation';
+import { useTranslation, LanguageToggle } from '@/lib/i18n';
 
 const DashboardNav = () => {
     const pathname = usePathname();
+    const { t } = useTranslation();
     const activeTab = pathname.split("?")[0].split("/").pop();
     const activeItem = defaultNavItems.find((i: any) => i.key === activeTab);
-
-
-
-
 
     return (
         <div className="sticky top-0 right-0 z-50 py-[28px]   backdrop-blur ">
             <div className="flex xl:flex-row flex-col gap-6 xl:gap-0 items-center justify-between">
                 <h3 className=" text-[28px] tracking-[-0.84px] font-syne font-medium  text-[#101828] flex items-center gap-2">
-
-                    {activeItem?.label ?? (activeTab && activeTab?.charAt(0).toUpperCase() + activeTab?.slice(1))}
+                    {activeTab === "dashboard" ? t("nav.dashboard", "Dashboard") :
+                     activeTab === "templates" ? t("nav.templates", "Templates") :
+                     activeTab === "community" ? t("nav.community", "Community") :
+                     activeTab === "settings" ? t("nav.settings", "Settings") :
+                     (activeItem?.label ?? (activeTab && activeTab?.charAt(0).toUpperCase() + activeTab?.slice(1)))}
                 </h3>
-                <div className="flex  gap-2.5 max-sm:w-full max-md:justify-center max-sm:flex-wrap">
-
-
-
+                <div className="flex items-center gap-2.5 max-sm:w-full max-md:justify-center max-sm:flex-wrap">
+                    <LanguageToggle />
                     {activeTab !== "playground" && activeTab !== "theme" && <Link
                         href="/generate"
                         className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-black text-sm font-medium shadow-sm hover:shadow-md"
-                        aria-label="Create new presentation"
+                        aria-label={t("nav.new_presentation", "Create new presentation")}
                         style={{
                             borderRadius: "48px",
                             background: "linear-gradient(270deg, #D5CAFC 2.4%, #E3D2EB 27.88%, #F4DCD3 69.23%, #FDE4C2 100%)",
                         }}
                     >
 
-                        <span className="hidden md:inline">New presentation</span>
-                        <span className="md:hidden">New</span>
+                        <span className="hidden md:inline">{t("nav.new_presentation", "New presentation")}</span>
+                        <span className="md:hidden">{t("nav.new", "New")}</span>
                         <ChevronRight className="w-4 h-4" />
                     </Link>}
                     

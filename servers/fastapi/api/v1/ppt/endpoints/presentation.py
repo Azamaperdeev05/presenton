@@ -2218,6 +2218,11 @@ async def stream_smart_presentation(
             error_metadata=smart_error_metadata,
         ),
         media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
     )
 
 
@@ -2464,6 +2469,11 @@ async def stream_presentation(
             on_error=rollback_stream_session,
         ),
         media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
     )
 
 

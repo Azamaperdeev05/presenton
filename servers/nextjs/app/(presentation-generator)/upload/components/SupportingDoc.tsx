@@ -4,6 +4,7 @@ import type { ChangeEvent, DragEvent } from "react";
 import { ArrowUp, File, Paperclip, X } from "lucide-react";
 
 import { notify } from "@/components/ui/sonner";
+import { useTranslation } from "@/lib/i18n";
 
 interface SupportingDocProps {
   files: File[];
@@ -29,6 +30,7 @@ export default function SupportingDoc({
   disabled = false,
   multiple = true,
 }: SupportingDocProps) {
+  const { t } = useTranslation();
   const addFiles = (candidates: File[]) => {
     const allowed = candidates.filter(isAllowedFile);
     const rejected = candidates.length - allowed.length;
@@ -108,7 +110,11 @@ export default function SupportingDoc({
       <div className="flex items-center justify-between gap-3">
         <label className="inline-flex h-8 cursor-pointer items-center gap-2 rounded-full px-2.5 font-manrope text-xs font-medium text-[#4C4C4C] transition hover:bg-[#F6F6F9]">
           <Paperclip className="h-3.5 w-3.5" />
-          <span>{files.length ? `Attach more (${files.length})` : "Attach files"}</span>
+          <span>
+            {files.length
+              ? `${t("upload.attach_more", "Attach more")} (${files.length})`
+              : t("upload.attach_files", "Attach files")}
+          </span>
           <input
             type="file"
             className="hidden"
@@ -124,7 +130,7 @@ export default function SupportingDoc({
           type="button"
           onClick={onSubmit}
           disabled={disabled}
-          aria-label="Generate presentation"
+          aria-label={t("upload.generate", "Generate presentation")}
           className="flex h-9 w-9 items-center justify-center rounded-full bg-[#7A5AF8] text-white shadow-sm transition hover:bg-[#6938EF] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <ArrowUp className="h-4 w-4" strokeWidth={2} />

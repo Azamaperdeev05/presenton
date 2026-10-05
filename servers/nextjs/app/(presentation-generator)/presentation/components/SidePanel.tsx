@@ -36,6 +36,7 @@ import {
   isTemplateFreePresentation,
 } from "../../_shared/blank-slide";
 import { MAX_NUMBER_OF_SLIDES } from "@/utils/presentationLimits";
+import { useTranslation } from "@/lib/i18n";
 
 interface SidePanelProps {
   selectedSlide: number;
@@ -58,6 +59,7 @@ const SidePanel = ({
 
   loading,
 }: SidePanelProps) => {
+  const { t } = useTranslation();
   const pathname = usePathname();
   const [showNewSlideSelection, setShowNewSlideSelection] = useState(false);
   const thumbnailScrollRef = useRef<HTMLDivElement | null>(null);
@@ -314,7 +316,7 @@ const SidePanel = ({
               >
                 <Plus className="h-3.5 w-3.5" />
                 <span className="whitespace-nowrap text-[11px] font-normal leading-normal tracking-[0.11px]">
-                  Add Slides
+                  {t("editor.add_slides", "Add Slides")}
                 </span>
               </button>
             </div>

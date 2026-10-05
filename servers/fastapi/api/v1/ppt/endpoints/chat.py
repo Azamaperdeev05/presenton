@@ -1,4 +1,5 @@
 import json
+import logging
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -23,8 +24,10 @@ from services.chat import sql_chat_history
 from services.chat import ChatTurnResult, PresentationChatService
 from services.chat.conversation_store import ChatConversationStore
 from services.database import get_async_session
+from utils.sse import safe_sse_stream
 
 
+LOGGER = logging.getLogger(__name__)
 CHAT_ROUTER = APIRouter(prefix="/chat", tags=["Chat"])
 
 
@@ -134,32 +137,41 @@ async def chat_message_stream(
     )
 
     async def inner():
-        try:
-            async for event_type, value in service.stream_reply(
-                payload.message,
-                payload.attachments,
-            ):
-                if event_type == "chunk" and isinstance(value, str):
-                    yield SSEResponse(
-                        event="response",
-                        data=json.dumps({"type": "chunk", "chunk": value}),
-                    ).to_string()
-                elif event_type == "status" and isinstance(value, str):
-                    yield SSEStatusResponse(status=value).to_string()
-                elif event_type == "trace" and isinstance(value, dict):
-                    yield SSETraceResponse(trace=value).to_string()
-                elif event_type == "complete" and isinstance(value, ChatTurnResult):
-                    result = value
-                    complete_payload = ChatMessageResponse(
-                        conversation_id=result.conversation_id,
-                        response=result.response_text,
-                        tool_calls=result.tool_calls,
-                    )
-                    yield SSECompleteResponse(
-                        key="chat",
-                        value=complete_payload.model_dump(mode="json"),
-                    ).to_string()
-        except HTTPException as exc:
-            yield SSEErrorResponse(detail=exc.detail).to_string()
+        async for event_type, value in service.stream_reply(
+            payload.message,
+            payload.attachments,
+        ):
+            if event_type == "chunk" and isinstance(value, str):
+                yield SSEResponse(
+                    event="response",
+                    data=json.dumps({"type": "chunk", "chunk": value}),
+                ).to_string()
+            elif event_type == "status" and isinstance(value, str):
+                yield SSEStatusResponse(status=value).to_string()
+            elif event_type == "trace" and isinstance(value, dict):
+                yield SSETraceResponse(trace=value).to_string()
+            elif event_type == "complete" and isinstance(value, ChatTurnResult):
+                result = value
+                complete_payload = ChatMessageResponse(
+                    conversation_id=result.conversation_id,
+                    response=result.response_text,
+                    tool_calls=result.tool_calls,
+                )
+                yield SSECompleteResponse(
+                    key="chat",
+                    value=complete_payload.model_dump(mode="json"),
+                ).to_string()
 
-    return StreamingResponse(inner(), media_type="text/event-stream")
+    return StreamingResponse(
+        safe_sse_stream(
+            inner(),
+            logger=LOGGER,
+            error_detail="Failed to stream chat message. Please try again.",
+        ),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )

@@ -4,6 +4,7 @@ import React from "react";
 import { LayoutDashboard, Star, Brain, Settings, HelpCircle, UsersRound } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { useTranslation } from "@/lib/i18n";
 
 
 
@@ -31,6 +32,7 @@ const DashboardSidebar = ({
     showTemplates = true,
 }: DashboardSidebarProps) => {
     const pathname = usePathname();
+    const { t } = useTranslation();
 
     return (
         <aside
@@ -39,9 +41,9 @@ const DashboardSidebar = ({
         >
             <div>
 
-                <Link href={`/dashboard`} className="flex items-center  pb-6 border-b border-[#E1E1E5]   gap-2    ">
-                    <div className="bg-[#7C51F8] rounded-full cursor-pointer p-1 flex justify-center items-center mx-auto">
-                        <img src="/logo-with-bg.png" alt="Presenton logo" className="h-[40px] object-contain w-full" />
+                <Link href={`/dashboard`} className="flex items-center pb-6 border-b border-[#E1E1E5] gap-2">
+                    <div className="cursor-pointer flex justify-center items-center mx-auto">
+                        <img src="/logo-with-bg.png?v=2" alt="Presenton logo" className="h-[40px] w-[40px] object-contain rounded-full shadow-sm hover:scale-105 transition-transform" />
                     </div>
                 </Link>
                 <nav className="pt-6 font-syne" aria-label="Dashboard sections">
@@ -55,11 +57,11 @@ const DashboardSidebar = ({
                                 "flex flex-col tex-center items-center gap-2  transition-colors",
                                 pathname === "/dashboard" ? "" : "ring-transparent",
                             ].join(" ")}
-                            aria-label="Dashboard"
-                            title="Dashboard"
+                            aria-label={t("nav.dashboard", "Dashboard")}
+                            title={t("nav.dashboard", "Dashboard")}
                         >
                             <LayoutDashboard className={["h-4 w-4", pathname === "/dashboard" ? "text-[#5146E5]" : "text-slate-600"].join(" ")} />
-                            <span className="text-[11px] text-slate-800">Dashboard</span>
+                            <span className="text-[11px] text-slate-800">{t("nav.dashboard", "Dashboard")}</span>
                         </Link>
                         {showTemplates ? <Link
                             prefetch={false}
@@ -68,23 +70,23 @@ const DashboardSidebar = ({
                                 "flex flex-col tex-center items-center gap-2  transition-colors",
                                 pathname === "/templates" ? "" : "ring-transparent",
                             ].join(" ")}
-                            aria-label="Templates"
-                            title="Templates"
+                            aria-label={t("nav.templates", "Templates")}
+                            title={t("nav.templates", "Templates")}
                         >
                             <div className="flex flex-col cursor-pointer tex-center items-center gap-2  transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={`${pathname === "/templates" ? "#5146E5" : "#475569"}`} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="M4 14h6" /><path d="M4 2h10" /><rect x="4" y="18" width="16" height="4" rx="1" /><rect x="4" y="6" width="16" height="4" rx="1" /></svg>
-                                <span className="text-[11px] text-slate-800">Templates</span>
+                                <span className="text-[11px] text-slate-800">{t("nav.templates", "Templates")}</span>
                             </div>
                         </Link> : null}
                         {showCommunity ? <Link
                             prefetch={false}
                             href="/community"
                             className="flex flex-col items-center gap-2 text-center transition-colors"
-                            aria-label="Community"
-                            title="Community"
+                            aria-label={t("nav.community", "Community")}
+                            title={t("nav.community", "Community")}
                         >
                             <UsersRound className={`h-4 w-4 ${pathname === "/community" ? "text-[#5146E5]" : "text-slate-600"}`} />
-                            <span className="text-[11px] text-slate-800">Community</span>
+                            <span className="text-[11px] text-slate-800">{t("nav.community", "Community")}</span>
                         </Link> : null}
 
                     </div>
@@ -97,7 +99,7 @@ const DashboardSidebar = ({
                     className="flex flex-col items-center gap-2 transition-colors"
                 >
                     <Settings className="h-4 w-4" />
-                    <span className="text-[11px] text-slate-800">Settings</span>
+                    <span className="text-[11px] text-slate-800">{t("nav.settings", "Settings")}</span>
                 </Link>
                 <div className="py-2"/>
                 <Link

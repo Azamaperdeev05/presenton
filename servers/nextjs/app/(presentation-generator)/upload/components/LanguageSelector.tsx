@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 import { Check, ChevronDown } from 'lucide-react';
@@ -39,8 +39,12 @@ export const LanguageSelector: React.FC<{
                     />
                     <CommandList>
                         <CommandEmpty>No language found.</CommandEmpty>
-                        <CommandGroup>
-                            {Object.values(LanguageType).map((language) => (
+                        <CommandGroup heading="Таңдаулы тілдер / Top languages">
+                            {[
+                                LanguageType.Kazakh,
+                                LanguageType.English,
+                                LanguageType.Russian,
+                            ].map((language) => (
                                 <CommandItem
                                     key={language}
                                     value={language}
@@ -49,7 +53,7 @@ export const LanguageSelector: React.FC<{
                                         onValueChange(currentValue);
                                         setOpenLanguage(false);
                                     }}
-                                    className="font-manrope"
+                                    className="font-manrope font-medium"
                                 >
                                     <Check
                                         className={cn(
@@ -60,6 +64,36 @@ export const LanguageSelector: React.FC<{
                                     {language}
                                 </CommandItem>
                             ))}
+                        </CommandGroup>
+                        <CommandSeparator />
+                        <CommandGroup heading="Барлық тілдер / All languages">
+                            {Object.values(LanguageType)
+                                .filter(
+                                    (l) =>
+                                        l !== LanguageType.Kazakh &&
+                                        l !== LanguageType.English &&
+                                        l !== LanguageType.Russian
+                                )
+                                .map((language) => (
+                                    <CommandItem
+                                        key={language}
+                                        value={language}
+                                        role="option"
+                                        onSelect={(currentValue) => {
+                                            onValueChange(currentValue);
+                                            setOpenLanguage(false);
+                                        }}
+                                        className="font-manrope"
+                                    >
+                                        <Check
+                                            className={cn(
+                                                "mr-2 h-4 w-4",
+                                                value === language ? "opacity-100" : "opacity-0"
+                                            )}
+                                        />
+                                        {language}
+                                    </CommandItem>
+                                ))}
                         </CommandGroup>
                     </CommandList>
                 </Command>

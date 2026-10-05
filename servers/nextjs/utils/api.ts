@@ -145,30 +145,33 @@ function isJsonResponse(response: Response): boolean {
  * provider decisions. A same-origin frontend 404/500 is commonly HTML, so it
  * must not be mistaken for a valid backend response.
  */
-export async function assertBackendReachable(): Promise<void> {
-  let response: Response;
-  try {
-    response = await fetch(getApiUrl("/api/v1/auth/status"), {
-      cache: "no-store",
-      credentials: "include",
-    });
-  } catch {
-    throw new BackendConnectionError();
-  }
+export async function assertBackendReachable(
+  maxRetries = 10,
+  retryDelayMs = 500
+): Promise<void> {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const response = await fetch(getApiUrl("/api/v1/auth/status"), {
+        cache: "no-store",
+        credentials: "include",
+      });
 
-  if (!response.ok || !isJsonResponse(response)) {
-    throw new BackendConnectionError();
-  }
-
-  try {
-    const status: unknown = await response.json();
-    if (!status || typeof status !== "object" || Array.isArray(status)) {
-      throw new BackendConnectionError();
+      if (response.ok && isJsonResponse(response)) {
+        const status: unknown = await response.json();
+        if (status && typeof status === "object" && !Array.isArray(status)) {
+          return;
+        }
+      }
+    } catch {
+      // Backend may still be initializing or starting up, retry shortly.
     }
-  } catch (error) {
-    if (isBackendConnectionError(error)) throw error;
-    throw new BackendConnectionError();
+
+    if (attempt < maxRetries - 1) {
+      await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+    }
   }
+
+  throw new BackendConnectionError();
 }
 
 /**

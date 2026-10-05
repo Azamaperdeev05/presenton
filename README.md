@@ -6,6 +6,7 @@
   <a href="https://presenton.ai/download"><strong>Quickstart</strong></a> &middot;
   <a href="https://presenton.ai/explore"><strong>Templates</strong></a> &middot;
   <a href="https://docs.presenton.ai/"><strong>Docs</strong></a> &middot;
+  <a href="./README_KZ.md"><strong>🇰🇿 Қазақша құжаттама</strong></a> &middot;
   <a href="https://www.youtube.com/@presentonai"><strong>Youtube</strong></a> &middot;
   <a href="https://discord.gg/9ZsKKxudNE"><strong>Discord</strong></a>
 </p>

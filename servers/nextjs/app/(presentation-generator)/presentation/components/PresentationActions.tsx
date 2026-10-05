@@ -102,6 +102,7 @@ import {
   InsertPalettePreview,
   type InsertPalettePreviewKind,
 } from "./InsertPalettePreview";
+import { useTranslation } from "@/lib/i18n";
 
 type PresentationActionsProps = React.ComponentProps<typeof Chat> & {
   editingDisabled?: boolean;
@@ -376,6 +377,22 @@ const NavButton = ({
   active: boolean;
   onClick: () => void;
 }) => {
+  const { t } = useTranslation();
+  const label =
+    item.id === "texts"
+      ? t("editor.texts", "Texts")
+      : item.id === "charts"
+        ? t("editor.charts", "Charts")
+        : item.id === "infographics"
+          ? t("editor.infographics", "Infographics")
+          : item.id === "tables"
+            ? t("editor.tables", "Tables")
+            : item.id === "images"
+              ? t("editor.images", "Images")
+              : item.id === "elements"
+                ? t("editor.elements", "Elements")
+                : item.label;
+
   return (
     <button
       type="button"
@@ -403,7 +420,7 @@ const NavButton = ({
           src={actionIconSrc[item.id]}
         />
       </span>
-      <span>{item.label}</span>
+      <span>{label}</span>
     </button>
   );
 };
@@ -1008,6 +1025,7 @@ export const BlocksPanel = ({
   presentationData?: unknown;
   onInsertBlock: (block: TemplateBlock) => void;
 }) => {
+  const { t } = useTranslation();
   const [blockPrompt, setBlockPrompt] = useState("");
   const [{ blocks, error, loading }, dispatchBlockState] = useReducer(
     blocksPanelReducer,
@@ -1096,14 +1114,14 @@ export const BlocksPanel = ({
         }
       `}</style>
       <h3 className="mb-3 text-[clamp(13px,0.95vw,15px)] font-semibold leading-5 text-[#101323]">
-        Blocks
+        {t("editor.blocks", "Blocks")}
       </h3>
 
       <div className="mb-7 flex h-[clamp(46px,3.6vw,52px)] items-center rounded-[10px] border border-[#EDEEF0] bg-white pl-[clamp(10px,0.9vw,12px)] pr-[clamp(6px,0.6vw,8px)] shadow-[0_10px_26px_rgba(17,24,39,0.08)]">
         <input
           value={blockPrompt}
           onChange={(event) => setBlockPrompt(event.target.value)}
-          placeholder="Search blocks"
+          placeholder={t("editor.search_blocks", "Search blocks")}
           className="min-w-0 flex-1 bg-transparent text-[clamp(10px,0.75vw,12px)] text-[#101323] outline-none placeholder:text-[#9CA3AF]"
         />
         <button
@@ -1216,6 +1234,7 @@ function ActionsSidebar({
   blocksUnavailable?: boolean;
   onActionSelect: (action: ActionId) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <aside
       aria-label="Editor tools"
@@ -1239,9 +1258,9 @@ function ActionsSidebar({
             <PrimaryActionButton
               active={activeAction === "blocks"}
               disabled={blocksUnavailable}
-              disabledReason="Blocks require a presentation template"
+              disabledReason={t("editor.blocks_require_template", "Blocks require a presentation template")}
               iconSrc={actionIconSrc.blocks}
-              label="Blocks"
+              label={t("editor.blocks", "Blocks")}
               onClick={() => onActionSelect("blocks")}
             />
           </>
@@ -1308,6 +1327,7 @@ function ActionsPanel({
   presentationId: string;
   templateTheme: TemplateTheme;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="min-w-0 flex-1 bg-white">
       <div className={cn("h-full", activeAction === "ai" ? "block" : "hidden")}>
@@ -1329,7 +1349,7 @@ function ActionsPanel({
       {!aiOnly && activeAction === "texts" && (
         <InsertPanel
           disabled={editingDisabled}
-          title="Texts"
+          title={t("editor.texts", "Texts")}
           groups={[{ label: "Add", items: textItems }]}
           onItemSelect={onTextItemSelect}
           previewKind="text"
@@ -1339,7 +1359,7 @@ function ActionsPanel({
       {!aiOnly && activeAction === "charts" && (
         <InsertPanel
           disabled={editingDisabled}
-          title="Charts"
+          title={t("editor.charts", "Charts")}
           groups={[{ label: "Chart Type", items: chartTypeItems }]}
           onItemSelect={onChartItemSelect}
           previewKind="chart"
@@ -1349,7 +1369,7 @@ function ActionsPanel({
       {!aiOnly && activeAction === "infographics" && (
         <InsertPanel
           disabled={editingDisabled}
-          title="Infographics"
+          title={t("editor.infographics", "Infographics")}
           groups={[{ label: "Choose a layout", items: infographicItems }]}
           onItemSelect={onInfographicItemSelect}
           previewKind="infographic"
@@ -1359,7 +1379,7 @@ function ActionsPanel({
       {!aiOnly && activeAction === "tables" && (
         <InsertPanel
           disabled={editingDisabled}
-          title="Tables"
+          title={t("editor.tables", "Tables")}
           groups={[{ label: "Table Type", items: tableTypeItems }]}
           onItemSelect={onTableItemSelect}
           previewKind="table"
@@ -1369,7 +1389,7 @@ function ActionsPanel({
       {!aiOnly && activeAction === "images" && (
         <InsertPanel
           disabled={editingDisabled}
-          title="Images"
+          title={t("editor.images", "Images")}
           groups={[{ label: "Add", items: imageItems }]}
           onItemSelect={onImageItemSelect}
           previewKind="image"
@@ -1379,7 +1399,7 @@ function ActionsPanel({
       {!aiOnly && activeAction === "elements" && (
         <InsertPanel
           disabled={editingDisabled}
-          title="Elements"
+          title={t("editor.elements", "Elements")}
           groups={elementItemGroups}
           onItemSelect={onElementItemSelect}
           previewKind="element"

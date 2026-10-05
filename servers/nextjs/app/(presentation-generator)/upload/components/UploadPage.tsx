@@ -163,7 +163,7 @@ const UploadPage = ({
   );
   const [config, setConfig] = useState<PresentationConfig>({
     slides: null,
-    language: LanguageType.Auto,
+    language: LanguageType.Kazakh,
     prompt: "",
     tone: ToneType.Default,
     verbosity: VerbosityType.Standard,

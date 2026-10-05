@@ -35,3 +35,9 @@ servers/fastapi/dist/
 servers/fastapi/fastembed_cache/
 servers/fastapi/*.egg-info/
 pptxcollection/
+
+# Local binaries and app bundles
+Presenton.app/
+scripts/PresentonBinary
+main
+*.tsbuildinfo

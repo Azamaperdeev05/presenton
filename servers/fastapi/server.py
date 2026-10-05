@@ -1,3 +1,17 @@
+import os
+for _env in ("SSL_CERT_FILE", "REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE"):
+    _val = os.environ.get(_env)
+    if _val and not os.path.exists(_val):
+        del os.environ[_env]
+
+if "SSL_CERT_FILE" not in os.environ:
+    try:
+        import certifi
+        os.environ["SSL_CERT_FILE"] = certifi.where()
+        os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
+    except ImportError:
+        pass
+
 import uvicorn
 import argparse
 from api.main import app

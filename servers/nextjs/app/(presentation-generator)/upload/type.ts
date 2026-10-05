@@ -14,21 +14,27 @@ export enum ThemeType {
 }
 
 export enum LanguageType {
-  // Major World Languages
-  Auto = "Auto (English)",
+  // Top Preferred Languages
+  Kazakh = "Kazakh (Қазақша)",
   English = "English",
+  Russian = "Russian (Русский)",
+  Auto = "Auto (Автоматты)",
+
+  // Major World Languages
   Spanish = "Spanish (Español)",
   French = "French (Français)",
   German = "German (Deutsch)",
   Portuguese = "Portuguese (Português)",
   Italian = "Italian (Italiano)",
   Dutch = "Dutch (Nederlands)",
-  Russian = "Russian (Русский)",
   ChineseSimplified = "Chinese (Simplified - 中文, 汉语)",
   ChineseTraditional = "Chinese (Traditional - 中文, 漢語)",
   Japanese = "Japanese (日本語)",
   Korean = "Korean (한국어)",
   Arabic = "Arabic (العربية)",
+  Turkish = "Turkish (Türkçe)",
+  Uzbek = "Uzbek (Oʻzbek)",
+  Azerbaijani = "Azerbaijani (Azərbaycan dili)",
   Hindi = "Hindi (हिन्दी)",
   Bengali = "Bengali (বাংলা)",
 
@@ -61,15 +67,11 @@ export enum LanguageType {
   // Middle Eastern and Central Asian Languages
   Hebrew = "Hebrew (עברית)",
   Persian = "Persian/Farsi (فارسی)",
-  Turkish = "Turkish (Türkçe)",
   Kurdish = "Kurdish (Kurdî / کوردی)",
   Pashto = "Pashto (پښتو)",
   Dari = "Dari (دری)",
-  Uzbek = "Uzbek (Oʻzbek)",
-  Kazakh = "Kazakh (Қазақша)",
   Tajik = "Tajik (Тоҷикӣ)",
   Turkmen = "Turkmen (Türkmençe)",
-  Azerbaijani = "Azerbaijani (Azərbaycan dili)",
 
   // South Asian Languages
   Urdu = "Urdu (اردو)",

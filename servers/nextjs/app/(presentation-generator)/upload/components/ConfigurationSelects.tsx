@@ -15,6 +15,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
 } from "@/components/ui/command";
 import {
   Popover,
@@ -31,6 +32,7 @@ import {
 import { Button } from "@/components/ui/button";
 import GenerationModeDialog from "./GenerationModeDialog";
 import type { GenerationMode } from "@/utils/presentationGenerationMode";
+import { useTranslation } from "@/lib/i18n";
 
 // Types
 interface ConfigurationSelectsProps {
@@ -85,6 +87,7 @@ const SlideCountSelect: React.FC<{
   onOpenChange: (open: boolean) => void;
   compact?: boolean;
 }> = ({ value, onValueChange, open, onOpenChange, compact = false }) => {
+  const { t } = useTranslation();
   const [customInput, setCustomInput] = useState(
     value && !SLIDE_OPTIONS.includes(value as SlideOption) ? value : "",
   );
@@ -116,7 +119,9 @@ const SlideCountSelect: React.FC<{
     }
   };
 
-  const displayLabel = value ? `${value} slides` : "Auto slides";
+  const displayLabel = value
+    ? `${value} ${t("upload.slides", "slides")}`
+    : t("upload.auto_slides", "Auto slides");
 
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
@@ -176,7 +181,7 @@ const SlideCountSelect: React.FC<{
                   : "text-xs font-medium min-[1800px]:text-sm min-[2200px]:text-base",
               )}
             >
-              {compact && value ? `Slides ${value}` : displayLabel}
+              {compact && value ? `${value} ${t("upload.slides", "slides")}` : displayLabel}
             </span>
             {compact && (
               <ChevronUp
@@ -230,7 +235,7 @@ const SlideCountSelect: React.FC<{
               className="h-8 w-16 px-2 text-sm min-[1800px]:h-9 min-[1800px]:w-20 min-[1800px]:text-base"
             />
             <span className="text-sm font-medium min-[1800px]:text-base">
-              slides
+              {t("upload.slides", "slides")}
             </span>
           </div>
         </div>
@@ -262,7 +267,7 @@ const SlideCountSelect: React.FC<{
                       value === option ? "opacity-100" : "opacity-0",
                     )}
                   />
-                  {option} slides
+                  {option} {t("upload.slides", "slides")}
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -282,7 +287,9 @@ const LanguageSelect: React.FC<{
   open: boolean;
   onOpenChange: (open: boolean) => void;
   compact?: boolean;
-}> = ({ value, onValueChange, open, onOpenChange, compact = false }) => (
+}> = ({ value, onValueChange, open, onOpenChange, compact = false }) => {
+  const { t } = useTranslation();
+  return (
   <Popover open={open} onOpenChange={onOpenChange}>
     <PopoverTrigger asChild>
       <button
@@ -322,7 +329,7 @@ const LanguageSelect: React.FC<{
                 : "text-xs font-medium min-[1800px]:text-sm min-[2200px]:text-base",
             )}
           >
-            {value || "Select language"}
+            {value || t("upload.select_language", "Select language")}
           </span>
           {compact && (
             <ChevronUp
@@ -344,13 +351,17 @@ const LanguageSelect: React.FC<{
     >
       <Command>
         <CommandInput
-          placeholder="Search language..."
+          placeholder={t("upload.search_language", "Search language...")}
           className="font-manrope"
         />
         <CommandList>
-          <CommandEmpty>No language found.</CommandEmpty>
-          <CommandGroup>
-            {Object.values(LanguageType).map((language) => (
+          <CommandEmpty>{t("upload.no_language_found", "No language found.")}</CommandEmpty>
+          <CommandGroup heading={t("upload.top_languages", "Таңдаулы тілдер")}>
+            {[
+              LanguageType.Kazakh,
+              LanguageType.English,
+              LanguageType.Russian,
+            ].map((language) => (
               <CommandItem
                 key={language}
                 value={language}
@@ -359,7 +370,7 @@ const LanguageSelect: React.FC<{
                   onValueChange(currentValue);
                   onOpenChange(false);
                 }}
-                className="font-manrope"
+                className="font-manrope font-medium"
               >
                 <Check
                   className={cn(
@@ -371,11 +382,42 @@ const LanguageSelect: React.FC<{
               </CommandItem>
             ))}
           </CommandGroup>
+          <CommandSeparator />
+          <CommandGroup heading={t("upload.other_languages", "Басқа тілдер")}>
+            {Object.values(LanguageType)
+              .filter(
+                (l) =>
+                  l !== LanguageType.Kazakh &&
+                  l !== LanguageType.English &&
+                  l !== LanguageType.Russian,
+              )
+              .map((language) => (
+                <CommandItem
+                  key={language}
+                  value={language}
+                  role="option"
+                  onSelect={(currentValue) => {
+                    onValueChange(currentValue);
+                    onOpenChange(false);
+                  }}
+                  className="font-manrope"
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === language ? "opacity-100" : "opacity-0",
+                    )}
+                  />
+                  {language}
+                </CommandItem>
+              ))}
+          </CommandGroup>
         </CommandList>
       </Command>
     </PopoverContent>
   </Popover>
-);
+  );
+};
 
 export function ConfigurationSelects({
   config,

@@ -27,6 +27,7 @@ import {
 } from "@/app/(presentation-generator)/components/TemplateV2HtmlSlidePreview";
 import MarkdownRenderer from "@/components/MarkDownRender";
 import { trackEvent, MixpanelEvent } from "@/utils/mixpanel";
+import { useTranslation } from "@/lib/i18n";
 
 export const PresentationCard = ({
   id,
@@ -45,6 +46,7 @@ export const PresentationCard = ({
 }) => {
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useTranslation();
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
   const [showActions, setShowActions] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -214,7 +216,7 @@ export const PresentationCard = ({
                       void handleDuplicate();
                     }}
                   >
-                    <p>{isDuplicating ? "Duplicating..." : "Duplicate"}</p>
+                    <p>{isDuplicating ? t("dashboard.duplicating", "Duplicating...") : t("dashboard.duplicate", "Duplicate")}</p>
                     {isDuplicating ? (
                       <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
                     ) : (
@@ -231,7 +233,7 @@ export const PresentationCard = ({
                     setShowDeleteDialog(true);
                   }}
                 >
-                  <p>Delete</p>
+                  <p>{t("dashboard.delete", "Delete")}</p>
                   <Trash className="h-4 w-4" />
                 </button>
               </PopoverContent>
@@ -263,11 +265,11 @@ export const PresentationCard = ({
               />
             </div>
             <DialogTitle className="text-[22px] font-semibold leading-7 tracking-[-0.02em] text-[#B42318]">
-              Delete presentation?
+              {t("dashboard.delete_confirm_title", "Delete presentation?")}
             </DialogTitle>
             <DialogDescription asChild>
               <div className="w-full pt-2 text-sm leading-6 text-[#667085]">
-                <p>This will permanently delete the presentation below.</p>
+                <p>{t("dashboard.delete_confirm_desc", "This will permanently delete the presentation below.")}</p>
                 <div
                   className="mt-4 rounded-[12px] border border-[#FECDCA] bg-[#FFFBFA] px-4 py-3 text-left"
                   title={title || "Untitled presentation"}
@@ -276,9 +278,6 @@ export const PresentationCard = ({
                     {title || "Untitled presentation"}
                   </p>
                 </div>
-                <p className="mt-3 text-[13px] font-medium text-[#D92D20]">
-                  This action cannot be undone.
-                </p>
               </div>
             </DialogDescription>
           </DialogHeader>
@@ -290,7 +289,7 @@ export const PresentationCard = ({
               disabled={isDeleting}
               className="h-11 rounded-[10px] border border-[#D0D5DD] bg-white px-4 text-sm font-medium text-[#344054] shadow-sm transition-colors hover:bg-[#F9FAFB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7A5AF8]/30 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Cancel
+              {t("dashboard.cancel", "Cancel")}
             </button>
             <button
               type="button"

@@ -292,6 +292,30 @@ function installRuntime(version, archivePath) {
       2,
     )}\n`,
   );
+  applyExportCorePatches(targetRoot);
+}
+
+function applyExportCorePatches(root) {
+  const distIndexPath = path.join(
+    root,
+    "node_modules",
+    "@presenton",
+    "export-core",
+    "dist",
+    "index.js",
+  );
+  if (!fs.existsSync(distIndexPath)) return;
+
+  let content = fs.readFileSync(distIndexPath, "utf8");
+  const unpatchedTarget = "'shape':_0x1dad4b['shape']?_0x1dad4b['shape']:'rectangle'";
+  const patchedTarget =
+    "'shape':_0x1a23cf?'rectangle':(_0x1dad4b['shape']?_0x1dad4b['shape']:'rectangle')";
+
+  if (content.includes(unpatchedTarget)) {
+    content = content.replace(unpatchedTarget, patchedTarget);
+    fs.writeFileSync(distIndexPath, content, "utf8");
+    console.log("[presentation-export] Applied circle clipping patch to export-core.");
+  }
 }
 
 async function main() {
@@ -303,6 +327,7 @@ async function main() {
     return;
   }
   if (existing.ok && !forceInstall) {
+    applyExportCorePatches(targetRoot);
     console.log(`[presentation-export] Using export-core ${existing.packageVersion}`);
     return;
   }

@@ -5,6 +5,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { trackEvent, MixpanelEvent } from "@/utils/mixpanel";
+import { useTranslation, LanguageToggle } from "@/lib/i18n";
 import { ArrowLeft } from "lucide-react";
 
 const PATHS_WITH_HEADER_BACK = [
@@ -20,6 +21,7 @@ function pathMatches(pathname: string | null, base: string) {
 
 const Header = () => {
   const pathname = usePathname();
+  const { t } = useTranslation();
   const showHeaderBack = PATHS_WITH_HEADER_BACK.some((p) => pathMatches(pathname, p));
 
   const backToUpload =
@@ -27,11 +29,7 @@ const Header = () => {
   const backToTemplates = pathMatches(pathname, "/template-preview");
 
   const backHref = backToUpload ? "/upload" : backToTemplates ? "/templates" : "/dashboard";
-  const backLabel = backToUpload
-    ? "BACK"
-    : backToTemplates
-      ? "BACK"
-      : "BACK";
+  const backLabel = t("nav.back", "BACK");
 
   return (
     <div className="w-full   sticky top-0 z-50 py-7 "
@@ -45,13 +43,14 @@ const Header = () => {
           <div className="flex items-center gap-3">
             <Link href="/dashboard" onClick={() => trackEvent(MixpanelEvent.Navigation, { from: pathname, to: "/dashboard" })}>
               <img
-                src="/logo-with-bg.png"
+                src="/logo-with-bg.png?v=2"
                 alt="Presentation logo"
                 className="h-[40px] w-[40px]"
               />
             </Link>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center gap-4">
+            <LanguageToggle />
             {showHeaderBack ? (
               <Link
                 href={backHref}

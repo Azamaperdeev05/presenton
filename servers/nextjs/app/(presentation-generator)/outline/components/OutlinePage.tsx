@@ -44,7 +44,7 @@ import TemplateSelection from "./TemplateSelection";
 
 const DEFAULT_OUTLINE_CONFIG: PresentationConfig = {
   slides: null,
-  language: LanguageType.Auto,
+  language: LanguageType.Kazakh,
   prompt: "",
   tone: ToneType.Default,
   verbosity: VerbosityType.Standard,

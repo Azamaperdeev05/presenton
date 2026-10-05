@@ -33,6 +33,7 @@ import {
 } from "@/utils/mixpanel";
 import { usePresentationUndoRedo } from "../hooks/PresentationUndoRedo";
 import ToolTip from "@/components/ToolTip";
+import { useTranslation, LanguageToggle } from "@/lib/i18n";
 import {
   clearChatHtmlSelection,
   clearPresentationData,
@@ -117,6 +118,7 @@ const PresentationHeader = ({
 
   const pathname = usePathname();
   const dispatch = useDispatch();
+  const { t } = useTranslation();
 
   const {
     presentationData,
@@ -453,7 +455,7 @@ const PresentationHeader = ({
     <div
       className={` rounded-[18px] max-md:mt-4 ${mobile ? "" : "bg-white"}  p-5`}
     >
-      <p className="text-sm font-medium text-[#19001F]">Export as</p>
+      <p className="text-sm font-medium text-[#19001F]">{t("editor.export_as", "Export as")}</p>
       <div className="my-[18px] h-[1px] bg-[#E8E8E8]" />
       <div className="space-y-3">
         <Button
@@ -509,12 +511,12 @@ const PresentationHeader = ({
                 cancelTitleEdit();
               }
             }}
-            placeholder="Presentation title"
+            placeholder={t("editor.title_placeholder", "Presentation title")}
             className="min-w-0 flex-1 bg-transparent py-2 pr-2 font-syne text-base leading-tight text-[#101323] placeholder:text-[#101323]/35 outline-none border-0 focus:ring-0"
-            aria-label="Presentation title"
+            aria-label={t("editor.title_placeholder", "Presentation title")}
           />
           <div className="flex shrink-0 items-center gap-0.5 border-l border-[#EDECEC] pl-1 ml-0.5">
-            <ToolTip content="Save · Enter">
+            <ToolTip content={`${t("common.save", "Save")} · Enter`}>
               <button
                 type="button"
                 onMouseDown={onTitleSaveMouseDown}
@@ -525,7 +527,7 @@ const PresentationHeader = ({
                 <Check className="h-4 w-4" strokeWidth={2.25} />
               </button>
             </ToolTip>
-            <ToolTip content="Cancel · Esc">
+            <ToolTip content={`${t("common.cancel", "Cancel")} · Esc`}>
               <button
                 type="button"
                 onMouseDown={onTitleCancelMouseDown}
@@ -574,12 +576,12 @@ const PresentationHeader = ({
             onClick={() => {
               router.push("/dashboard");
             }}
-            src="/logo-with-bg.png"
+            src="/logo-with-bg.png?v=2"
             alt=""
             className="w-10 h-10 cursor-pointer object-contain"
           />
           {presentationData && !isStreaming && !isEditingTitle ? (
-            <ToolTip content="Rename presentation">{titleBlock}</ToolTip>
+            <ToolTip content={t("editor.rename", "Rename presentation")}>{titleBlock}</ToolTip>
           ) : (
             titleBlock
           )}
@@ -599,8 +601,8 @@ const PresentationHeader = ({
             <ToolTip
               content={
                 enableHtmlSelector
-                  ? "Element selection is on"
-                  : "Click a slide element to add it to AI chat"
+                  ? t("editor.element_selection_on", "Element selection is on")
+                  : t("editor.element_select_tooltip_off", "Click a slide element to add it to AI chat")
               }
             >
               <button
@@ -626,7 +628,7 @@ const PresentationHeader = ({
                 >
                   <MousePointer2 className="h-3.5 w-3.5" strokeWidth={2} />
                 </span>
-                <span className="whitespace-nowrap">Select to edit</span>
+                <span className="whitespace-nowrap">{t("editor.select_to_edit", "Select to edit")}</span>
                 <span
                   aria-hidden="true"
                   className={cn(
@@ -638,7 +640,7 @@ const PresentationHeader = ({
             </ToolTip>
           )}
           <div className="flex items-center gap-2 bg-[#F6F6F9] px-3.5 h-[38px] border border-[#EDECEC] rounded-[80px]">
-            <ToolTip content="Regenerate Presentation">
+            <ToolTip content={t("editor.regenerate", "Regenerate Presentation")}>
               <button
                 type="button"
                 onClick={() => setIsRegenerateConfirmOpen(true)}
@@ -648,7 +650,7 @@ const PresentationHeader = ({
               </button>
             </ToolTip>
             <Separator orientation="vertical" className="h-4" />
-            <ToolTip content="Undo">
+            <ToolTip content={t("editor.undo", "Undo")}>
               <button
                 disabled={!canUndo}
                 className=" disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer group"
@@ -660,7 +662,7 @@ const PresentationHeader = ({
               </button>
             </ToolTip>
             <Separator orientation="vertical" className="h-4" />
-            <ToolTip content="Redo">
+            <ToolTip content={t("editor.redo", "Redo")}>
               <button
                 disabled={!canRedo}
                 className=" disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer group"
@@ -672,7 +674,7 @@ const PresentationHeader = ({
               </button>
             </ToolTip>
             <Separator orientation="vertical" className="h-4 w-[2px]" />
-            <ToolTip content="Present">
+            <ToolTip content={t("editor.present", "Present")}>
               <button
                 onClick={() => {
                   const to = `?id=${presentation_id}&mode=present&slide=${
@@ -701,10 +703,10 @@ const PresentationHeader = ({
           </div>
 
         {generationMode === "standard" && (
-          <ToolTip content="Keyboard shortcuts (?)">
+          <ToolTip content={t("editor.keyboard_shortcuts_tooltip", "Keyboard shortcuts (?)")}>
             <button
               type="button"
-              aria-label="Keyboard shortcuts"
+              aria-label={t("editor.shortcuts", "Keyboard shortcuts")}
               aria-haspopup="dialog"
               aria-expanded={shortcutsDialogOpen}
               aria-keyshortcuts="?"
@@ -720,6 +722,8 @@ const PresentationHeader = ({
             </button>
           </ToolTip>)}
 
+          <LanguageToggle />
+
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
               <button
@@ -733,7 +737,7 @@ const PresentationHeader = ({
                 {isExporting ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
-                  "Export"
+                  t("editor.export", "Export")
                 )}{" "}
                 <ArrowRightFromLine className="w-3.5 h-3.5" />
               </button>
@@ -757,11 +761,10 @@ const PresentationHeader = ({
               <AlertTriangle className="h-6 w-6 text-red-500" />
             </div>
             <DialogTitle className="text-lg font-semibold text-[#191919]">
-              Regenerate Presentation?
+              {t("editor.regenerate_confirm_title", "Regenerate Presentation?")}
             </DialogTitle>
             <DialogDescription className="text-sm leading-relaxed text-gray-500">
-              This will replace the current slides with a newly generated
-              version and clear undo history. Your current edits may be lost.
+              {t("editor.regenerate_confirm_desc", "This will replace the current slides with a newly generated version and clear undo history. Your current edits may be lost.")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-row border-t border-gray-100 p-0 sm:space-x-0">
@@ -771,7 +774,7 @@ const PresentationHeader = ({
               onClick={() => setIsRegenerateConfirmOpen(false)}
               className="h-auto flex-1 rounded-none rounded-bl-2xl px-4 py-3.5 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-700"
             >
-              Cancel
+              {t("common.cancel", "Cancel")}
             </Button>
             <Button
               type="button"
@@ -779,7 +782,7 @@ const PresentationHeader = ({
               onClick={handleReGenerate}
               className="h-auto flex-1 rounded-none rounded-br-2xl border-l border-gray-100 px-4 py-3.5 text-sm font-medium text-red-500 hover:bg-red-50 hover:text-red-600"
             >
-              Regenerate
+              {t("editor.regenerate", "Regenerate")}
             </Button>
           </DialogFooter>
         </DialogContent>

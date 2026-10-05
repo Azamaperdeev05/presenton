@@ -69,7 +69,10 @@ def get_user_config_path_env():
 
 
 def get_disable_auth_env():
-    return os.getenv("DISABLE_AUTH")
+    val = os.getenv("DISABLE_AUTH")
+    if val is None:
+        return "true"
+    return val
 
 
 def get_presenton_oauth_issuer() -> str:

@@ -3,6 +3,7 @@ import { LogOut, Search, Shield, ShieldCheck } from 'lucide-react'
 import { IMAGE_PROVIDERS, LLM_PROVIDERS } from '@/utils/providerConstants'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/store/store'
+import { isAuthDisabled } from '@/utils/auth'
 
 export type SettingsSection = 'text-provider' | 'image-provider' | 'web-search-provider' | 'privacy' | 'admin' | 'session'
 
@@ -63,15 +64,17 @@ const SettingSideBar = ({ selectedProvider, setSelectedProvider, presentonSelect
                         </div>
                         <p className='text-[#191919] text-xs font-medium'>Admin</p>
                     </button>
-                    <button
-                        className={`w-full rounded-[6px] p-3 py-4 flex items-center gap-1.5 border ${selectedProvider === 'session' ? 'bg-[#F4F3FF] border-[#D9D6FE]' : 'bg-white border-[#EDEEEF]'}`}
-                        onClick={() => setSelectedProvider('session')}
-                    >
-                        <div className='relative w-6 h-6 rounded-full overflow-hidden border border-[#EDEEEF] flex items-center justify-center bg-white'>
-                            <LogOut className='w-3.5 h-3.5 text-[#5146E5]' />
-                        </div>
-                        <p className='text-[#191919] text-xs font-medium'>Sign out</p>
-                    </button>
+                    {!isAuthDisabled() && (
+                        <button
+                            className={`w-full rounded-[6px] p-3 py-4 flex items-center gap-1.5 border ${selectedProvider === 'session' ? 'bg-[#F4F3FF] border-[#D9D6FE]' : 'bg-white border-[#EDEEEF]'}`}
+                            onClick={() => setSelectedProvider('session')}
+                        >
+                            <div className='relative w-6 h-6 rounded-full overflow-hidden border border-[#EDEEEF] flex items-center justify-center bg-white'>
+                                <LogOut className='w-3.5 h-3.5 text-[#5146E5]' />
+                            </div>
+                            <p className='text-[#191919] text-xs font-medium'>Sign out</p>
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

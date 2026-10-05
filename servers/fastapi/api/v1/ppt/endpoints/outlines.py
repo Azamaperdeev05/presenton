@@ -273,4 +273,9 @@ async def stream_outlines(
             on_error=rollback_stream_session,
         ),
         media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
     )

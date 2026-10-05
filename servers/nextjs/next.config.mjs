@@ -8,6 +8,10 @@ const nextConfig = {
   reactStrictMode: false,
   distDir: ".next-build",
   output: "standalone",
+  env: {
+    DISABLE_AUTH: process.env.DISABLE_AUTH || "true",
+    NEXT_PUBLIC_DISABLE_AUTH: process.env.NEXT_PUBLIC_DISABLE_AUTH || "true",
+  },
   turbopack: {
     root: nextjsRoot,
   },

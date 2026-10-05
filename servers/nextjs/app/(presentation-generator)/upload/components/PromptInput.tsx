@@ -2,6 +2,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { PencilIcon, X } from "lucide-react";
 import type { KeyboardEvent, ReactNode } from "react";
+import { useTranslation } from "@/lib/i18n";
 
 interface PromptReference {
   id: string;
@@ -24,11 +25,12 @@ export function PromptInput({
   onChange,
   references = [],
   onRemoveReference,
-  variant = "standard",
+  variant = "smart",
   footer,
   onSubmit,
   hasAttachments = false,
 }: PromptInputProps) {
+  const { t } = useTranslation();
   const isCommunityStart =
     variant === "smart" && references.length === 0 && !value.trim();
 
@@ -76,7 +78,9 @@ export function PromptInput({
         </span>
         <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-1">
           <p className="text-sm font-normal leading-normal text-[#333333]">
-            {isCommunityStart ? "Create from community" : "Write prompt"}
+            {isCommunityStart
+              ? t("upload.create_from_community", "Create from community")
+              : t("upload.write_prompt", "Write prompt")}
           </p>
           <Textarea
             value={value}
@@ -86,8 +90,14 @@ export function PromptInput({
             onKeyDown={handleKeyDown}
             placeholder={
               isCommunityStart
-                ? "Choose a design, then tell AI how to turn it into your deck."
-                : "Start with your idea... we'll handle the slides"
+                ? t(
+                    "upload.community_placeholder",
+                    "Choose a design, then tell AI how to turn it into your deck.",
+                  )
+                : t(
+                    "upload.prompt_placeholder",
+                    "Start with your idea... we'll handle the slides",
+                  )
             }
             data-testid="prompt-input"
             className={cn(

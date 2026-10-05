@@ -136,6 +136,9 @@ class PresentationChatService:
             round_content_chunks: list[str] = []
             thinking_chunks: list[str] = []
 
+            if round_index > 0:
+                yield "status", "Updating presentation..."
+
             try:
                 async for event in stream_generate_events(
                     client,
@@ -204,6 +207,7 @@ class PresentationChatService:
                     if tool_focus:
                         start_trace.update(tool_focus)
                     yield "trace", start_trace
+                    yield "status", self._tool_start_message(tool_call.name)
                     tool_result = await self._tools.execute_tool_call(tool_call)
                     last_tool_results.append(tool_result)
                     resolved_tool_focus = self._tool_focus_from_result(

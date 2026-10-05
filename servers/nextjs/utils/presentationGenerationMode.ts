@@ -30,5 +30,5 @@ export function isGenerationModeAvailable(
 export function getInitialGenerationMode(
   configuredMode: PresentationGenerationMode,
 ): GenerationMode {
-  return configuredMode === "smart" ? "smart" : "standard";
+  return configuredMode === "standard" ? "standard" : "smart";
 }
