@@ -82,12 +82,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
-    const ext = path.extname(resolvedFilePath).toLowerCase();
     const stats = await fsPromises.stat(resolvedFilePath);
     const stream = Readable.toWeb(fs.createReadStream(resolvedFilePath));
     return new NextResponse(stream as unknown as BodyInit, {
       headers: {
-        "Content-Type": CONTENT_TYPES[ext] ?? "application/octet-stream",
+        "Content-Type": "application/octet-stream",
         "Content-Disposition": contentDisposition(path.basename(filename)),
         "Content-Length": String(stats.size),
         "Cache-Control": "no-store",

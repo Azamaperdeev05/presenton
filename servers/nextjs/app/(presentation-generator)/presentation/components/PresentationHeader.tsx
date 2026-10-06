@@ -233,8 +233,8 @@ const PresentationHeader = ({
     let exportToastId: string | number | undefined;
     try {
       exportToastId = notify.loading(
-        "Exporting PPTX",
-        "Your presentation is being exported. This may take a moment."
+        "PPTX жүктелуде...",
+        "Презентация дайындалуда. Бірнеше секунд күтіңіз..."
       );
       setIsExporting(true);
       await trackExportLifecycle(
@@ -270,7 +270,7 @@ const PresentationHeader = ({
           throw new Error("No path returned from export");
         }
 
-        downloadLink(pptxPath, safePptxFileName);
+        await downloadLink(pptxPath, safePptxFileName);
       }
       await trackExportLifecycle(
         MixpanelEvent.Presentation_Export_Completed,
@@ -280,8 +280,8 @@ const PresentationHeader = ({
         exportStartedAt
       );
       notify.success(
-        "Export complete",
-        "Your PPTX file has been downloaded.",
+        "PPTX жүктелді!",
+        "Файл «Жүктеулер» (Downloads) қалтасына түсті.",
         { id: exportToastId }
       );
     } catch (error) {
@@ -295,8 +295,8 @@ const PresentationHeader = ({
         error
       );
       notify.error(
-        "Export failed",
-        "We are having trouble exporting your presentation. Please try again.",
+        "Экспорттау қатесі",
+        "Презентацияны жүктеу кезінде ақау пайда болды. Қайталап көріңіз.",
         exportToastId !== undefined ? { id: exportToastId } : undefined
       );
     } finally {
@@ -315,8 +315,8 @@ const PresentationHeader = ({
     let exportToastId: string | number | undefined;
     try {
       exportToastId = notify.loading(
-        "Exporting PDF",
-        "Your presentation is being exported. This may take a moment."
+        "PDF жүктелуде...",
+        "Презентация дайындалуда. Бірнеше секунд күтіңіз..."
       );
       setIsExporting(true);
       await trackExportLifecycle(
@@ -348,7 +348,7 @@ const PresentationHeader = ({
           if (!pdfPath) {
             throw new Error("No path returned from export");
           }
-          downloadLink(pdfPath, safePdfFileName);
+          await downloadLink(pdfPath, safePdfFileName);
         } else {
           throw new Error("Failed to export PDF");
         }
@@ -361,8 +361,8 @@ const PresentationHeader = ({
         exportStartedAt
       );
       notify.success(
-        "Export complete",
-        "Your PDF file has been downloaded.",
+        "PDF жүктелді!",
+        "Файл «Жүктеулер» (Downloads) қалтасына түсті.",
         { id: exportToastId }
       );
     } catch (error) {
@@ -376,8 +376,8 @@ const PresentationHeader = ({
         error
       );
       notify.error(
-        "Export failed",
-        "We are having trouble exporting your presentation. Please try again.",
+        "Экспорттау қатесі",
+        "Презентацияны жүктеу кезінде ақау пайда болды. Қайталап көріңіз.",
         exportToastId !== undefined ? { id: exportToastId } : undefined
       );
     } finally {
@@ -408,14 +408,29 @@ const PresentationHeader = ({
       }`
     );
   };
-  const downloadLink = (path: string, fileName: string) => {
-    const link = document.createElement("a");
-    link.href = path;
-    link.download = fileName;
-    link.rel = "noopener";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const downloadLink = async (path: string, fileName: string) => {
+    try {
+      const response = await fetch(path);
+      if (!response.ok) throw new Error("Download request failed");
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = fileName;
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 20000);
+    } catch {
+      const link = document.createElement("a");
+      link.href = path;
+      link.download = fileName;
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   const trackExportLifecycle = async (

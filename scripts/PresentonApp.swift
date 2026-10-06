@@ -273,6 +273,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNavigati
             return
         }
 
+        let path = url.path.lowercased()
+        if path.contains("/api/export-presentation/file") || path.hasSuffix(".pdf") || path.hasSuffix(".pptx") {
+            if #available(macOS 11.3, *) {
+                decisionHandler(.download)
+                return
+            }
+        }
+
         if url.host == "127.0.0.1" || url.host == "localhost" {
             decisionHandler(.allow)
             return
@@ -289,6 +297,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNavigati
 
     @available(macOS 11.3, *)
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
+        if let httpResponse = navigationResponse.response as? HTTPURLResponse {
+            let disposition = (httpResponse.allHeaderFields["Content-Disposition"] as? String)
+                ?? (httpResponse.allHeaderFields["content-disposition"] as? String)
+                ?? ""
+            if disposition.lowercased().contains("attachment") {
+                decisionHandler(.download)
+                return
+            }
+        }
+
+        let path = navigationResponse.response.url?.path.lowercased() ?? ""
+        if path.contains("/api/export-presentation/file") || path.hasSuffix(".pdf") || path.hasSuffix(".pptx") {
+            decisionHandler(.download)
+            return
+        }
+
         if navigationResponse.canShowMIMEType {
             decisionHandler(.allow)
         } else {
@@ -298,6 +322,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNavigati
 
     @available(macOS 11.3, *)
     func webView(_ webView: WKWebView, navigationAction: WKNavigationAction, didBecome download: WKDownload) {
+        download.delegate = self
+    }
+
+    @available(macOS 11.3, *)
+    func webView(_ webView: WKWebView, navigationResponse: WKNavigationResponse, didBecome download: WKDownload) {
         download.delegate = self
     }
 

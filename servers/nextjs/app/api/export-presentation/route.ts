@@ -89,6 +89,57 @@ async function moveExportIntoOwnerDirectory(
   return destination;
 }
 
+type ExportCacheEntry = {
+  outPath: string;
+  updatedAt: string;
+};
+
+type ExportCacheStore = Record<string, Record<string, ExportCacheEntry>>;
+
+function getCacheFilePath(): string {
+  const appData = process.env.APP_DATA_DIRECTORY?.trim() || "";
+  return path.join(appData, "exports", ".export_cache.json");
+}
+
+async function readExportCache(): Promise<ExportCacheStore> {
+  try {
+    const raw = await fs.readFile(getCacheFilePath(), "utf8");
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
+async function writeExportCache(cache: ExportCacheStore): Promise<void> {
+  try {
+    await fs.writeFile(getCacheFilePath(), JSON.stringify(cache, null, 2), "utf8");
+  } catch (err) {
+    console.warn("[export-cache] Failed to save cache:", err);
+  }
+}
+
+async function fetchPresentationUpdatedAt(
+  presentationId: string,
+  cookieHeader?: string
+): Promise<string | null> {
+  try {
+    const fastApiUrl = (
+      process.env.FAST_API_INTERNAL_URL?.trim() ||
+      process.env.NEXT_PUBLIC_FAST_API?.trim() ||
+      "http://127.0.0.1:8000"
+    ).replace(/\/+$/, "");
+    const res = await fetch(`${fastApiUrl}/api/v1/ppt/presentation/${presentationId}`, {
+      headers: cookieHeader ? { cookie: cookieHeader } : undefined,
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.updated_at || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(req: NextRequest) {
   const auth = await authStatusForRequest(req);
   if (!auth.authenticated) {
@@ -129,6 +180,30 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const presentationId = id.trim();
+
+  // Fast-path: Check if up-to-date exported file already exists
+  const currentUpdatedAt = await fetchPresentationUpdatedAt(presentationId, cookieHeader);
+  if (currentUpdatedAt) {
+    const cache = await readExportCache();
+    const cachedEntry = cache[presentationId]?.[format];
+    if (cachedEntry && cachedEntry.updatedAt === currentUpdatedAt) {
+      try {
+        const stats = await fs.stat(cachedEntry.outPath);
+        if (stats.isFile() && stats.size > 0) {
+          console.info(`[export-presentation:${format}] Instant cache hit for ${presentationId}`);
+          return NextResponse.json({
+            success: true,
+            path: buildExportDownloadUrl(cachedEntry.outPath),
+            cached: true,
+          });
+        }
+      } catch {
+        // Cache file invalid or removed, proceed to regenerate
+      }
+    }
+  }
+
   try {
     if (!(await bundledExportPackageAvailable())) {
       throw new Error(
@@ -138,7 +213,7 @@ export async function POST(req: NextRequest) {
 
     const { path: unscopedOutPath } = await runBundledPresentationExport({
       format,
-      presentationId: id.trim(),
+      presentationId,
       title: typeof title === "string" ? title : undefined,
       cookieHeader,
     });
@@ -146,6 +221,18 @@ export async function POST(req: NextRequest) {
       unscopedOutPath,
       auth.user_id
     );
+
+    if (currentUpdatedAt) {
+      const cache = await readExportCache();
+      if (!cache[presentationId]) {
+        cache[presentationId] = {};
+      }
+      cache[presentationId][format] = {
+        outPath,
+        updatedAt: currentUpdatedAt,
+      };
+      await writeExportCache(cache);
+    }
 
     return NextResponse.json({
       success: true,
