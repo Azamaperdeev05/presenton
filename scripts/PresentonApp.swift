@@ -10,7 +10,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNavigati
     var pollTimer: Timer?
     var startTime = Date()
 
-    let appDir = "/Users/azamat/Developer.noindex/GitHub/Презентация"
+    var appDir: String {
+        if let env = ProcessInfo.processInfo.environment["PRESENTON_DIR"], FileManager.default.fileExists(atPath: env) {
+            return env
+        }
+        let devDir = "/Users/azamat/Developer.noindex/GitHub/Презентация"
+        if FileManager.default.fileExists(atPath: "\(devDir)/scripts/start-presenton.sh") {
+            return devDir
+        }
+        let bundleURL = Bundle.main.bundleURL.deletingLastPathComponent().path
+        if FileManager.default.fileExists(atPath: "\(bundleURL)/scripts/start-presenton.sh") {
+            return bundleURL
+        }
+        return devDir
+    }
     let targetURL = URL(string: "http://127.0.0.1:3000")!
     let backendURL = URL(string: "http://127.0.0.1:8000/api/v1/auth/status")!
     var isChecking = false
@@ -24,21 +37,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNavigati
 
     func setupSignals() {
         signal(SIGTERM) { _ in
-            let appDir = "/Users/azamat/Developer.noindex/GitHub/Презентация"
+            let dir = ProcessInfo.processInfo.environment["PRESENTON_DIR"] ?? "/Users/azamat/Developer.noindex/GitHub/Презентация"
             let task = Process()
             task.executableURL = URL(fileURLWithPath: "/bin/bash")
-            task.arguments = ["\(appDir)/scripts/stop-presenton.sh"]
-            task.currentDirectoryURL = URL(fileURLWithPath: appDir)
+            task.arguments = ["\(dir)/scripts/stop-presenton.sh"]
+            task.currentDirectoryURL = URL(fileURLWithPath: dir)
             try? task.run()
             task.waitUntilExit()
             exit(0)
         }
         signal(SIGINT) { _ in
-            let appDir = "/Users/azamat/Developer.noindex/GitHub/Презентация"
+            let dir = ProcessInfo.processInfo.environment["PRESENTON_DIR"] ?? "/Users/azamat/Developer.noindex/GitHub/Презентация"
             let task = Process()
             task.executableURL = URL(fileURLWithPath: "/bin/bash")
-            task.arguments = ["\(appDir)/scripts/stop-presenton.sh"]
-            task.currentDirectoryURL = URL(fileURLWithPath: appDir)
+            task.arguments = ["\(dir)/scripts/stop-presenton.sh"]
+            task.currentDirectoryURL = URL(fileURLWithPath: dir)
             try? task.run()
             task.waitUntilExit()
             exit(0)
@@ -267,6 +280,34 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNavigati
         task.waitUntilExit()
     }
 
+    func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+        if let url = navigationAction.request.url, url.absoluteString != "about:blank" {
+            NSWorkspace.shared.open(url)
+            return nil
+        }
+        let popup = WKWebView(frame: .zero, configuration: configuration)
+        popup.navigationDelegate = self
+        popup.uiDelegate = self
+        return popup
+    }
+
+    func webView(_ webView: WKWebView, runJavaScriptAlertPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping () -> Void) {
+        let alert = NSAlert()
+        alert.messageText = message
+        alert.addButton(withTitle: "Жарайды")
+        alert.runModal()
+        completionHandler()
+    }
+
+    func webView(_ webView: WKWebView, runJavaScriptConfirmPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (Bool) -> Void) {
+        let alert = NSAlert()
+        alert.messageText = message
+        alert.addButton(withTitle: "Иә")
+        alert.addButton(withTitle: "Жоқ")
+        let response = alert.runModal()
+        completionHandler(response == .alertFirstButtonReturn)
+    }
+
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         guard let url = navigationAction.request.url else {
             decisionHandler(.allow)
@@ -281,11 +322,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNavigati
             }
         }
 
+        // Popup or new-window action (e.g. ChatGPT OAuth) -> open in system default browser!
+        if navigationAction.targetFrame == nil {
+            if url.absoluteString != "about:blank" {
+                NSWorkspace.shared.open(url)
+            }
+            decisionHandler(.cancel)
+            return
+        }
+
         if url.host == "127.0.0.1" || url.host == "localhost" {
             decisionHandler(.allow)
             return
         }
 
+        // External links (OAuth login, Google, GitHub, OpenAI, Pexels, Docs) -> open in default browser!
         if url.scheme == "http" || url.scheme == "https" {
             NSWorkspace.shared.open(url)
             decisionHandler(.cancel)

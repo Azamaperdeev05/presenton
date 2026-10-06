@@ -41,3 +41,5 @@ Presenton.app/
 scripts/PresentonBinary
 main
 *.tsbuildinfo
+dist/
+*.dmg
