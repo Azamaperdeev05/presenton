@@ -5,6 +5,7 @@ import {
   MAX_NUMBER_OF_SLIDES,
 } from "@/utils/presentationLimits";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { v4 as uuidv4 } from "uuid";
 
 export interface PresentationData {
   id: string;
@@ -129,8 +130,25 @@ const presentationGenerationSlice = createSlice({
     },
     // Set presentation data
     setPresentationData: (state, action: PayloadAction<PresentationData>) => {
+      let sanitizedSlides = action.payload.slides;
+      if (Array.isArray(sanitizedSlides)) {
+        const seenIds = new Set<string>();
+        sanitizedSlides = sanitizedSlides.map((slide: any, idx: number) => {
+          let id = slide?.id;
+          if (!id || typeof id !== "string" || seenIds.has(id)) {
+            id = uuidv4();
+          }
+          seenIds.add(id);
+          return {
+            ...slide,
+            id,
+            index: typeof slide?.index === "number" ? slide.index : idx,
+          };
+        });
+      }
       state.presentationData = {
         ...action.payload,
+        slides: sanitizedSlides,
         theme: normalizeTemplateTheme(action.payload.theme),
       };
       state.chatHtmlSelection = null;
@@ -171,11 +189,24 @@ const presentationGenerationSlice = createSlice({
           return;
         }
 
+        const existingIds = new Set(
+          state.presentationData.slides.map((s: any) => s?.id).filter(Boolean)
+        );
+        let slideId = action.payload.slide?.id;
+        if (!slideId || existingIds.has(slideId)) {
+          slideId = uuidv4();
+        }
+
+        const slideToAdd = {
+          ...action.payload.slide,
+          id: slideId,
+        };
+
         // Insert the new slide at the specified index
         state.presentationData.slides.splice(
           action.payload.index,
           0,
-          action.payload.slide
+          slideToAdd
         );
 
         // Update indices for all slides to ensure they remain sequential
@@ -235,9 +266,17 @@ const presentationGenerationSlice = createSlice({
           return;
         }
 
+        const existingIds = new Set(
+          slides.map((s: any) => s?.id).filter(Boolean)
+        );
+        let slideId = action.payload.slideId;
+        if (!slideId || existingIds.has(slideId)) {
+          slideId = uuidv4();
+        }
+
         const duplicatedSlide = {
           ...JSON.parse(JSON.stringify(sourceSlide)),
-          id: action.payload.slideId,
+          id: slideId,
           index: action.payload.index + 1,
         };
 
@@ -381,8 +420,21 @@ const presentationGenerationSlice = createSlice({
           return;
         }
 
+        const existingIds = new Set(
+          state.presentationData.slides.map((s: any) => s?.id).filter(Boolean)
+        );
+        let slideId = action.payload.slideData?.id;
+        if (!slideId || existingIds.has(slideId)) {
+          slideId = uuidv4();
+        }
+
+        const slideToAdd = {
+          ...action.payload.slideData,
+          id: slideId,
+        };
+
         // Insert the new slide at the specified index + 1 (after current slide)
-        state.presentationData.slides.splice(action.payload.index + 1, 0, action.payload.slideData);
+        state.presentationData.slides.splice(action.payload.index + 1, 0, slideToAdd);
 
         // Update indices for all slides to ensure they remain sequential
         state.presentationData.slides = state.presentationData.slides.map(

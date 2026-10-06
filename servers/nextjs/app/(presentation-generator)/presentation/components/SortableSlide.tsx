@@ -10,6 +10,7 @@ interface SortableSlideProps {
     onSlideClick: (index: any) => void;
     fonts?: unknown;
     presentationVersion?: unknown;
+    sortableId?: string;
 }
 
 export const SortableSlide = memo(function SortableSlide({
@@ -19,8 +20,11 @@ export const SortableSlide = memo(function SortableSlide({
     onSlideClick,
     fonts,
     presentationVersion,
+    sortableId,
 }: SortableSlideProps) {
     const lastClickTime = useRef(0);
+    const resolvedSortableId =
+        sortableId ?? (slide.id ? `${slide.id}-${index}` : `${slide.index ?? index}`);
     const {
         attributes,
         listeners,
@@ -28,7 +32,7 @@ export const SortableSlide = memo(function SortableSlide({
         transform,
         transition,
         isDragging
-    } = useSortable({ id: slide.id || `${slide.index}` });
+    } = useSortable({ id: resolvedSortableId });
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -68,6 +72,7 @@ export const SortableSlide = memo(function SortableSlide({
 }, (previous, next) =>
     previous.slide === next.slide &&
     previous.index === next.index &&
+    previous.sortableId === next.sortableId &&
     previous.onSlideClick === next.onSlideClick &&
     previous.fonts === next.fonts &&
     previous.presentationVersion === next.presentationVersion &&

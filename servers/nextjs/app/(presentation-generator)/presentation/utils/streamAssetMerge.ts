@@ -68,6 +68,12 @@ function findPreviousSlide(
   incomingSlide: any,
   incomingPosition: number
 ): any | undefined {
+  if (incomingSlide?.id) {
+    const slideById = previousSlides.find(
+      (slide) => slide?.id === incomingSlide.id
+    );
+    if (slideById) return slideById;
+  }
   if (typeof incomingSlide?.index === "number") {
     const indexedSlide = previousSlides.find(
       (slide) => slide?.index === incomingSlide.index
@@ -89,6 +95,11 @@ export function mergeSlidePreservingResolvedAssets(
   return {
     ...previousSlide,
     ...mergeTreePreservingResolvedAssets(previousSlide, incomingSlide),
+    id: incomingSlide.id || previousSlide.id,
+    index:
+      typeof incomingSlide.index === "number"
+        ? incomingSlide.index
+        : previousSlide.index,
   };
 }
 
@@ -117,7 +128,8 @@ export function mergeSingleSlidePreservingResolvedAssets(
       : nextSlides.length;
   const existingIndex = nextSlides.findIndex(
     (slide) =>
-      typeof slide?.index === "number" && slide.index === incomingIndex
+      (incomingSlide?.id && slide?.id === incomingSlide.id) ||
+      (typeof slide?.index === "number" && slide.index === incomingIndex)
   );
   const existingSlide =
     existingIndex >= 0 ? nextSlides[existingIndex] : nextSlides[incomingIndex];

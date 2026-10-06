@@ -8,11 +8,12 @@ export function isTruthyAuthValue(value?: string | null): boolean {
 
 export function getDisableAuthValue(): string | undefined {
   if (typeof window !== "undefined") {
-    if (window.env?.DISABLE_AUTH !== undefined) {
-      return window.env.DISABLE_AUTH;
+    const windowEnv = window.env as Record<string, string | undefined> | undefined;
+    if (windowEnv?.DISABLE_AUTH !== undefined) {
+      return windowEnv.DISABLE_AUTH;
     }
-    if (window.env?.NEXT_PUBLIC_DISABLE_AUTH !== undefined) {
-      return window.env.NEXT_PUBLIC_DISABLE_AUTH;
+    if (windowEnv?.NEXT_PUBLIC_DISABLE_AUTH !== undefined) {
+      return windowEnv.NEXT_PUBLIC_DISABLE_AUTH;
     }
   }
 

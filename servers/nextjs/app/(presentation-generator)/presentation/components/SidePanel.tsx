@@ -155,6 +155,9 @@ const SidePanel = ({
     });
   }, [selectedSlide]);
 
+  const getSlideIdentifier = (slide: any, index: number) =>
+    slide?.id ? `${slide.id}-${index}` : `${slide?.type ?? "slide"}-${index}`;
+
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
 
@@ -163,11 +166,17 @@ const SidePanel = ({
     if (active.id !== over.id) {
       // Find the indices of the dragged and target items
       const oldIndex = presentationData?.slides.findIndex(
-        (item: any) => item.id === active.id
+        (item: any, index: number) =>
+          getSlideIdentifier(item, index) === active.id ||
+          item.id === active.id
       );
       const newIndex = presentationData?.slides.findIndex(
-        (item: any) => item.id === over.id
+        (item: any, index: number) =>
+          getSlideIdentifier(item, index) === over.id ||
+          item.id === over.id
       );
+
+      if (oldIndex === -1 || newIndex === -1) return;
 
       // Reorder the array
       const reorderedArray = arrayMove(
@@ -265,10 +274,7 @@ const SidePanel = ({
                 presentationData &&
                 presentationData?.slides.map((slide: any, index: number) => (
                   <SlideThumbnailCard
-                    key={
-                      slide.id ??
-                      `${slide.type ?? "slide"}-${slide.index ?? index}`
-                    }
+                    key={getSlideIdentifier(slide, index)}
                     slide={slide}
                     index={index}
                     selected={selectedSlide === index}
@@ -281,27 +287,29 @@ const SidePanel = ({
                 <SortableContext
                   items={
                     presentationData?.slides.map(
-                      (slide: any) => slide.id || `${slide.index}`
+                      (slide: any, index: number) =>
+                        getSlideIdentifier(slide, index)
                     ) || []
                   }
                   strategy={verticalListSortingStrategy}
                 >
                   {presentationData &&
                     presentationData?.slides.map(
-                      (slide: any, index: number) => (
-                        <SortableSlide
-                          key={
-                            slide.id ??
-                            `${slide.type ?? "slide"}-${slide.index ?? index}`
-                          }
-                          slide={slide}
-                          index={index}
-                          selectedSlide={selectedSlide}
-                          fonts={presentationData.fonts}
-                          presentationVersion={presentationData.version}
-                          onSlideClick={onSlideClick}
-                        />
-                      )
+                      (slide: any, index: number) => {
+                        const identifier = getSlideIdentifier(slide, index);
+                        return (
+                          <SortableSlide
+                            key={identifier}
+                            sortableId={identifier}
+                            slide={slide}
+                            index={index}
+                            selectedSlide={selectedSlide}
+                            fonts={presentationData.fonts}
+                            presentationVersion={presentationData.version}
+                            onSlideClick={onSlideClick}
+                          />
+                        );
+                      }
                     )}
                 </SortableContext>
               )}

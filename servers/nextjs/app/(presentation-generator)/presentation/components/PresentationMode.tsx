@@ -428,7 +428,7 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
             >
               {slides.map((slide, index) => (
                 <PresentationThumbnail
-                  key={slide.id ?? `present-thumbnail-${index}`}
+                  key={slide.id ? `${slide.id}-${index}` : `present-thumbnail-${index}`}
                   slide={slide}
                   slideIndex={index}
                   isActive={index === activeSlideIndex}
@@ -469,7 +469,7 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
           >
             {slides.map((slide, index) => (
               <div
-                key={slide.id ?? `present-mini-progress-${index}`}
+                key={slide.id ? `${slide.id}-mini-${index}` : `present-mini-progress-${index}`}
                 className={cn(
                   "h-full min-w-px flex-1",
                   index <= activeSlideIndex ? "bg-[#7A5AF8]" : "bg-[#323436]"
@@ -488,7 +488,7 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
             <div className="flex h-[6px] w-full gap-[3px]" aria-hidden="true">
               {slides.map((slide, index) => (
                 <div
-                  key={slide.id ?? `present-progress-${index}`}
+                  key={slide.id ? `${slide.id}-progress-${index}` : `present-progress-${index}`}
                   className={cn(
                     "h-full min-w-px flex-1",
                     index <= activeSlideIndex ? "bg-[#7A5AF8]" : "bg-[#323436]"
