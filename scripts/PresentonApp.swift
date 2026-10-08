@@ -10,19 +10,34 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNavigati
     var pollTimer: Timer?
     var startTime = Date()
 
-    var appDir: String {
+    static func resolveAppDir() -> String {
         if let env = ProcessInfo.processInfo.environment["PRESENTON_DIR"], FileManager.default.fileExists(atPath: env) {
             return env
         }
-        let devDir = "/Users/azamat/Developer.noindex/GitHub/Презентация"
-        if FileManager.default.fileExists(atPath: "\(devDir)/scripts/start-presenton.sh") {
-            return devDir
+        let cwd = FileManager.default.currentDirectoryPath
+        if FileManager.default.fileExists(atPath: "\(cwd)/scripts/start-presenton.sh") {
+            return cwd
         }
-        let bundleURL = Bundle.main.bundleURL.deletingLastPathComponent().path
-        if FileManager.default.fileExists(atPath: "\(bundleURL)/scripts/start-presenton.sh") {
-            return bundleURL
+        let bundleParent = Bundle.main.bundleURL.deletingLastPathComponent().path
+        if FileManager.default.fileExists(atPath: "\(bundleParent)/scripts/start-presenton.sh") {
+            return bundleParent
         }
-        return devDir
+        let home = NSHomeDirectory()
+        let standardCandidates = [
+            "\(home)/Developer/Presenton",
+            "\(home)/Developer.noindex/GitHub/Презентация",
+            "/Applications/Presenton.app/Contents/Resources/app"
+        ]
+        for candidate in standardCandidates {
+            if FileManager.default.fileExists(atPath: "\(candidate)/scripts/start-presenton.sh") {
+                return candidate
+            }
+        }
+        return cwd
+    }
+
+    var appDir: String {
+        return AppDelegate.resolveAppDir()
     }
     let targetURL = URL(string: "http://127.0.0.1:3000")!
     let backendURL = URL(string: "http://127.0.0.1:8000/api/v1/auth/status")!
@@ -37,7 +52,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNavigati
 
     func setupSignals() {
         signal(SIGTERM) { _ in
-            let dir = ProcessInfo.processInfo.environment["PRESENTON_DIR"] ?? "/Users/azamat/Developer.noindex/GitHub/Презентация"
+            let dir = AppDelegate.resolveAppDir()
             let task = Process()
             task.executableURL = URL(fileURLWithPath: "/bin/bash")
             task.arguments = ["\(dir)/scripts/stop-presenton.sh"]
@@ -47,7 +62,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNavigati
             exit(0)
         }
         signal(SIGINT) { _ in
-            let dir = ProcessInfo.processInfo.environment["PRESENTON_DIR"] ?? "/Users/azamat/Developer.noindex/GitHub/Презентация"
+            let dir = AppDelegate.resolveAppDir()
             let task = Process()
             task.executableURL = URL(fileURLWithPath: "/bin/bash")
             task.arguments = ["\(dir)/scripts/stop-presenton.sh"]

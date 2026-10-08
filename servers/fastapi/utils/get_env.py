@@ -45,8 +45,17 @@ def get_database_url_env():
     return os.getenv("DATABASE_URL")
 
 
-def get_app_data_directory_env():
-    return os.getenv("APP_DATA_DIRECTORY")
+def get_app_data_directory_env() -> str:
+    env_val = os.getenv("APP_DATA_DIRECTORY")
+    if env_val and env_val.strip():
+        return env_val.strip()
+    repo_app_data = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "..", "..", "app_data")
+    )
+    if os.path.exists(repo_app_data) or os.path.exists(os.path.dirname(repo_app_data)):
+        return repo_app_data
+    import tempfile
+    return os.path.join(tempfile.gettempdir(), "presenton_app_data")
 
 
 def get_fastapi_public_base_url() -> str | None:

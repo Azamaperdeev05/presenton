@@ -12,10 +12,9 @@ const CONTENT_TYPES: Record<string, string> = {
 };
 
 function getExportsDirectory(): string {
-  const appDataDirectory = process.env.APP_DATA_DIRECTORY?.trim();
-  if (!appDataDirectory) {
-    throw new Error("APP_DATA_DIRECTORY is required to download exported files.");
-  }
+  const appDataDirectory =
+    process.env.APP_DATA_DIRECTORY?.trim() ||
+    path.resolve(process.cwd(), "..", "..", "app_data");
   return path.join(appDataDirectory, "exports");
 }
 
@@ -24,26 +23,29 @@ function getSafeExportName(
   userId: string | null,
   isAdmin: boolean,
 ): string | null {
-  const decodedName = request.nextUrl.searchParams.get("name");
-
-  if (
-    !decodedName ||
-    decodedName.includes("\\") ||
-    path.isAbsolute(decodedName)
-  ) {
+  const rawName = request.nextUrl.searchParams.get("name");
+  if (!rawName) {
     return null;
   }
 
-  const normalized = path.normalize(decodedName);
+  // Normalize forward and back slashes
+  const unified = rawName.replace(/\\/g, "/").trim();
+  if (!unified || unified.startsWith("/") || /^[a-zA-Z]:/.test(unified)) {
+    return null;
+  }
+
+  const normalized = path.normalize(unified);
   if (
     normalized === ".." ||
-    normalized.startsWith(`..${path.sep}`)
+    normalized.startsWith(`..${path.sep}`) ||
+    normalized.startsWith("../") ||
+    path.isAbsolute(normalized)
   ) {
     return null;
   }
   if (!userId) return normalized;
 
-  const parts = normalized.split(path.sep);
+  const parts = normalized.split(path.sep).filter(Boolean);
   if (parts[0] === "users") {
     return parts.length >= 3 && parts[1] === userId ? normalized : null;
   }

@@ -24,7 +24,11 @@ import userConfigEnv from "./scripts/user-config-env.cjs";
 
 const { buildUserConfigFromEnv, readUserConfigEnv } = userConfigEnv;
 
-process.umask(0o022);
+if (process.platform !== "win32") {
+  try {
+    process.umask(0o022);
+  } catch {}
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -46,10 +50,9 @@ const fastapiPort = 8000;
 const nextjsPort = 3000;
 const appmcpPort = 8001;
 
-const appDataDirectory = process.env.APP_DATA_DIRECTORY;
-if (!appDataDirectory) {
-  throw new Error("APP_DATA_DIRECTORY is required");
-}
+const appDataDirectory =
+  process.env.APP_DATA_DIRECTORY?.trim() || join(__dirname, "app_data");
+process.env.APP_DATA_DIRECTORY = appDataDirectory;
 
 const appDataDirectoryMode = 0o755;
 const userConfigPath = join(appDataDirectory, "userConfig.json");
@@ -547,9 +550,19 @@ const startServers = async (nginxReadyPromise) => {
   process.once("SIGINT", () => shutdown(0));
   process.once("SIGTERM", () => shutdown(0));
 
+  const getPythonExecutable = () => {
+    if (process.env.PYTHON_BIN) return process.env.PYTHON_BIN;
+    const venvBin =
+      process.platform === "win32"
+        ? join(fastapiDir, ".venv", "Scripts", "python.exe")
+        : join(fastapiDir, ".venv", "bin", "python");
+    if (existsSync(venvBin)) return venvBin;
+    return process.platform === "win32" ? "python" : "python3";
+  };
+
   const spawnFastApiProcess = (stdio = ["ignore", "pipe", "pipe"]) =>
     spawn(
-      "python",
+      getPythonExecutable(),
       [
         "server.py",
         "--port",
@@ -635,7 +648,7 @@ const startServers = async (nginxReadyPromise) => {
   watchManagedProcess("FastAPI", fastApiProcess, restartFastApi);
 
   const appmcpProcess = spawn(
-    "python",
+    getPythonExecutable(),
     ["mcp_server.py", "--port", appmcpPort.toString()],
     {
       cwd: fastapiDir,
@@ -707,6 +720,28 @@ const startServers = async (nginxReadyPromise) => {
     );
   }
 
+  const openBrowser = (url) => {
+    if (process.env.NO_OPEN_BROWSER === "1" || args.includes("--no-open")) {
+      return;
+    }
+    const cmd =
+      process.platform === "darwin"
+        ? "open"
+        : process.platform === "win32"
+        ? "start"
+        : "xdg-open";
+    try {
+      if (process.platform === "win32") {
+        spawn("cmd", ["/c", "start", "", url], {
+          detached: true,
+          stdio: "ignore",
+        }).unref();
+      } else {
+        spawn(cmd, [url], { detached: true, stdio: "ignore" }).unref();
+      }
+    } catch {}
+  };
+
   try {
     await Promise.all([fastApiReadyPromise, nextjsReadyPromise, nginxReadyPromise]);
     printPresentonStartupBanner({
@@ -714,6 +749,7 @@ const startServers = async (nginxReadyPromise) => {
       nextPort: nextjsPort,
       fastapiPort,
     });
+    openBrowser(`http://localhost:${nextjsPort}`);
   } catch (err) {
     console.warn(`Skipping startup banner: ${err.message}`);
   }
@@ -724,6 +760,14 @@ const startServers = async (nginxReadyPromise) => {
 // Start nginx service (reverse proxy: see nginx.conf listen + upstream ports)
 const startNginx = () => {
   return new Promise((resolve) => {
+    if (
+      process.platform === "win32" ||
+      process.platform === "darwin" ||
+      !existsSync(nginxRuntimeConfigPath)
+    ) {
+      resolve(true);
+      return;
+    }
     const nginxProcess = spawn("service", ["nginx", "start"], {
       stdio: "inherit",
       env: process.env,

@@ -31,12 +31,15 @@ async function readExportRequestBody(req: NextRequest): Promise<{
   return parsed as { format?: unknown; id?: unknown; title?: unknown };
 }
 
-function buildExportDownloadUrl(outPath: string): string {
-  const appDataDirectory = process.env.APP_DATA_DIRECTORY?.trim();
-  if (!appDataDirectory) {
-    throw new Error("APP_DATA_DIRECTORY is required to download exported files.");
-  }
+function getAppDataDirectory(): string {
+  return (
+    process.env.APP_DATA_DIRECTORY?.trim() ||
+    path.resolve(process.cwd(), "..", "..", "app_data")
+  );
+}
 
+function buildExportDownloadUrl(outPath: string): string {
+  const appDataDirectory = getAppDataDirectory();
   const exportsDirectory = path.join(appDataDirectory, "exports");
   const relativePath = path.relative(exportsDirectory, outPath);
   if (
@@ -58,14 +61,10 @@ async function moveExportIntoOwnerDirectory(
     return outPath;
   }
 
-  const appDataDirectory = process.env.APP_DATA_DIRECTORY?.trim();
-  if (!appDataDirectory) {
-    throw new Error("APP_DATA_DIRECTORY is required to scope exported files.");
-  }
-
-  const exportsDirectory = await fs.realpath(
-    path.join(appDataDirectory, "exports")
-  );
+  const appDataDirectory = getAppDataDirectory();
+  const rawExportsDir = path.join(appDataDirectory, "exports");
+  await fs.mkdir(rawExportsDir, { recursive: true });
+  const exportsDirectory = await fs.realpath(rawExportsDir);
   const sourcePath = await fs.realpath(outPath);
   const ownerDirectory = path.join(exportsDirectory, "users", userId);
   await fs.mkdir(ownerDirectory, { recursive: true });
@@ -97,7 +96,7 @@ type ExportCacheEntry = {
 type ExportCacheStore = Record<string, Record<string, ExportCacheEntry>>;
 
 function getCacheFilePath(): string {
-  const appData = process.env.APP_DATA_DIRECTORY?.trim() || "";
+  const appData = getAppDataDirectory();
   return path.join(appData, "exports", ".export_cache.json");
 }
 
@@ -112,7 +111,9 @@ async function readExportCache(): Promise<ExportCacheStore> {
 
 async function writeExportCache(cache: ExportCacheStore): Promise<void> {
   try {
-    await fs.writeFile(getCacheFilePath(), JSON.stringify(cache, null, 2), "utf8");
+    const cacheFile = getCacheFilePath();
+    await fs.mkdir(path.dirname(cacheFile), { recursive: true });
+    await fs.writeFile(cacheFile, JSON.stringify(cache, null, 2), "utf8");
   } catch (err) {
     console.warn("[export-cache] Failed to save cache:", err);
   }

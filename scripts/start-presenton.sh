@@ -49,26 +49,66 @@ if [ ! -f "$USER_CONFIG_PATH" ]; then
     echo "{}" > "$USER_CONFIG_PATH"
 fi
 
+# Cross-platform helpers
+check_port() {
+    local port="$1"
+    if command -v lsof >/dev/null 2>&1; then
+        lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1
+    elif command -v ss >/dev/null 2>&1; then
+        ss -tuln | grep -q ":$port "
+    elif command -v netstat >/dev/null 2>&1; then
+        netstat -tuln | grep -q ":$port "
+    else
+        return 1
+    fi
+}
+
+open_url() {
+    local url="$1"
+    if [ "$NO_OPEN_BROWSER" = "1" ] || [ "$1" = "--no-open" ]; then
+        return
+    fi
+    if command -v open >/dev/null 2>&1; then
+        if [ -d "/Applications/Google Chrome.app" ]; then
+            open -na "Google Chrome" --args --app="$url"
+        else
+            open "$url"
+        fi
+    elif command -v xdg-open >/dev/null 2>&1; then
+        xdg-open "$url" >/dev/null 2>&1 &
+    elif command -v google-chrome >/dev/null 2>&1; then
+        google-chrome "$url" >/dev/null 2>&1 &
+    elif command -v chromium >/dev/null 2>&1; then
+        chromium "$url" >/dev/null 2>&1 &
+    fi
+}
+
+send_notification() {
+    local title="$1"
+    local message="$2"
+    if command -v osascript >/dev/null 2>&1; then
+        osascript -e "display notification \"$message\" with title \"$title\"" >/dev/null 2>&1 || true
+    elif command -v notify-send >/dev/null 2>&1; then
+        notify-send "$title" "$message" >/dev/null 2>&1 || true
+    fi
+}
+
 # 1. Check if already running
 IS_FASTAPI_RUNNING=0
 IS_NEXTJS_RUNNING=0
 
-if lsof -nP -iTCP:8000 -sTCP:LISTEN >/dev/null 2>&1; then
+if check_port 8000; then
     IS_FASTAPI_RUNNING=1
 fi
 
-if lsof -nP -iTCP:3000 -sTCP:LISTEN >/dev/null 2>&1; then
+if check_port 3000; then
     IS_NEXTJS_RUNNING=1
 fi
 
 if [ "$IS_FASTAPI_RUNNING" -eq 1 ] && [ "$IS_NEXTJS_RUNNING" -eq 1 ]; then
     echo "Presenton already running."
     if [ "$NO_OPEN_BROWSER" != "1" ] && [ "$1" != "--no-open" ]; then
-        if [ -d "/Applications/Google Chrome.app" ]; then
-            open -na "Google Chrome" --args --app="http://localhost:3000"
-        else
-            open "http://localhost:3000"
-        fi
+        open_url "http://localhost:3000"
     fi
     exit 0
 fi
@@ -81,8 +121,11 @@ if [ "$IS_FASTAPI_RUNNING" -eq 0 ]; then
     if [ -f ".venv/bin/python" ]; then
         nohup .venv/bin/python server.py --port 8000 --reload false >> "$LOG_FILE" 2>&1 &
         echo $! > "$FASTAPI_PID_FILE"
-    else
+    elif command -v uv >/dev/null 2>&1; then
         nohup uv run python server.py --port 8000 --reload false >> "$LOG_FILE" 2>&1 &
+        echo $! > "$FASTAPI_PID_FILE"
+    else
+        nohup python3 server.py --port 8000 --reload false >> "$LOG_FILE" 2>&1 &
         echo $! > "$FASTAPI_PID_FILE"
     fi
 fi
@@ -110,12 +153,8 @@ done
 if [ "$READY" -eq 1 ]; then
     echo "Presenton is ready!"
     if [ "$NO_OPEN_BROWSER" != "1" ] && [ "$1" != "--no-open" ]; then
-        if [ -d "/Applications/Google Chrome.app" ]; then
-            open -na "Google Chrome" --args --app="http://localhost:3000"
-        else
-            open "http://localhost:3000"
-        fi
-        osascript -e 'display notification "Presenton іске қосылды!" with title "Presenton"' >/dev/null 2>&1 || true
+        open_url "http://localhost:3000"
+        send_notification "Presenton" "Presenton іске қосылды!"
     fi
 else
     echo "Timeout waiting for Presenton to start. Check $LOG_FILE"

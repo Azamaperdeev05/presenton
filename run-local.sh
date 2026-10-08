@@ -20,6 +20,10 @@ export PRESENTON_APP_ROOT="$DIR"
 
 if [ -f "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ]; then
     export PUPPETEER_EXECUTABLE_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+elif [ -f "/usr/bin/google-chrome" ]; then
+    export PUPPETEER_EXECUTABLE_PATH="/usr/bin/google-chrome"
+elif [ -f "/usr/bin/chromium" ]; then
+    export PUPPETEER_EXECUTABLE_PATH="/usr/bin/chromium"
 fi
 
 mkdir -p "$APP_DATA_DIRECTORY/exports" \
@@ -47,8 +51,10 @@ echo "=========================================="
 cd "$DIR/servers/fastapi"
 if [ -f "$DIR/servers/fastapi/.venv/bin/python" ]; then
     "$DIR/servers/fastapi/.venv/bin/python" server.py --port 8000 --reload false &
-else
+elif command -v uv >/dev/null 2>&1; then
     uv run python server.py --port 8000 --reload false &
+else
+    python3 server.py --port 8000 --reload false &
 fi
 FASTAPI_PID=$!
 

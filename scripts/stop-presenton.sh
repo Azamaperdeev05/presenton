@@ -25,30 +25,27 @@ if [ -f "$NEXTJS_PID_FILE" ]; then
 fi
 
 # 2. Terminate any remaining processes on port 8000 and 3000
-PIDS_8000=$(lsof -ti:8000 2>/dev/null || true)
-if [ -n "$PIDS_8000" ]; then
-    echo "Stopping remaining port 8000 processes: $PIDS_8000"
-    kill $PIDS_8000 2>/dev/null || true
-fi
+kill_port() {
+    local port="$1"
+    if command -v lsof >/dev/null 2>&1; then
+        local pids=$(lsof -ti:"$port" 2>/dev/null || true)
+        if [ -n "$pids" ]; then
+            echo "Stopping processes on port $port: $pids"
+            kill $pids 2>/dev/null || true
+            sleep 0.5
+            kill -9 $pids 2>/dev/null || true
+        fi
+    elif command -v fuser >/dev/null 2>&1; then
+        fuser -k -n tcp "$port" >/dev/null 2>&1 || true
+    fi
+}
 
-PIDS_3000=$(lsof -ti:3000 2>/dev/null || true)
-if [ -n "$PIDS_3000" ]; then
-    echo "Stopping remaining port 3000 processes: $PIDS_3000"
-    kill $PIDS_3000 2>/dev/null || true
-fi
-
-sleep 1
-
-# Force kill if still holding ports
-PIDS_8000_FORCE=$(lsof -ti:8000 2>/dev/null || true)
-if [ -n "$PIDS_8000_FORCE" ]; then
-    kill -9 $PIDS_8000_FORCE 2>/dev/null || true
-fi
-
-PIDS_3000_FORCE=$(lsof -ti:3000 2>/dev/null || true)
-if [ -n "$PIDS_3000_FORCE" ]; then
-    kill -9 $PIDS_3000_FORCE 2>/dev/null || true
-fi
+kill_port 8000
+kill_port 3000
 
 echo "Presenton stopped."
-osascript -e 'display notification "Presenton өшірілді." with title "Presenton"' >/dev/null 2>&1 || true
+if command -v osascript >/dev/null 2>&1; then
+    osascript -e 'display notification "Presenton өшірілді." with title "Presenton"' >/dev/null 2>&1 || true
+elif command -v notify-send >/dev/null 2>&1; then
+    notify-send "Presenton" "Presenton өшірілді." >/dev/null 2>&1 || true
+fi

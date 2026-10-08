@@ -1,6 +1,7 @@
 import path from "path";
 import os from "os";
 import fs from "fs/promises";
+import fsSync from "fs";
 import { spawn } from "child_process";
 import { sanitizeFilename } from "@/app/(presentation-generator)/utils/others";
 import {
@@ -21,6 +22,52 @@ export function getPresentonAppRoot(): string {
     process.env.PRESENTON_APP_ROOT?.trim() ||
     path.join(process.cwd(), "..", "..")
   );
+}
+
+export function findSystemBrowserPath(): string | undefined {
+  if (process.env.PUPPETEER_EXECUTABLE_PATH?.trim()) {
+    return process.env.PUPPETEER_EXECUTABLE_PATH.trim();
+  }
+  if (process.platform === "darwin") {
+    const candidates = [
+      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+      "/Applications/Chromium.app/Contents/MacOS/Chromium",
+      "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+      "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+    ];
+    for (const c of candidates) {
+      if (fsSync.existsSync(c)) return c;
+    }
+  } else if (process.platform === "win32") {
+    const localAppData = process.env.LOCALAPPDATA || "";
+    const programFiles = process.env.PROGRAMFILES || "C:\\Program Files";
+    const programFilesX86 =
+      process.env["PROGRAMFILES(X86)"] || "C:\\Program Files (x86)";
+    const candidates = [
+      path.join(programFiles, "Google", "Chrome", "Application", "chrome.exe"),
+      path.join(programFilesX86, "Google", "Chrome", "Application", "chrome.exe"),
+      path.join(localAppData, "Google", "Chrome", "Application", "chrome.exe"),
+      path.join(programFilesX86, "Microsoft", "Edge", "Application", "msedge.exe"),
+      path.join(programFiles, "Microsoft", "Edge", "Application", "msedge.exe"),
+      path.join(programFiles, "BraveSoftware", "Brave-Browser", "Application", "brave.exe"),
+    ];
+    for (const c of candidates) {
+      if (fsSync.existsSync(c)) return c;
+    }
+  } else if (process.platform === "linux") {
+    const candidates = [
+      "/usr/bin/google-chrome",
+      "/usr/bin/google-chrome-stable",
+      "/usr/bin/chromium",
+      "/usr/bin/chromium-browser",
+      "/snap/bin/chromium",
+      "/usr/bin/microsoft-edge",
+    ];
+    for (const c of candidates) {
+      if (fsSync.existsSync(c)) return c;
+    }
+  }
+  return undefined;
 }
 
 function extractSessionTokenFromCookieHeader(cookieHeader?: string): string | undefined {
@@ -77,7 +124,9 @@ function normalizeExportOutputPath(params: {
   urlValue?: string;
 }): string {
   const { pathValue, urlValue } = params;
-  const appData = process.env.APP_DATA_DIRECTORY?.trim();
+  const appData =
+    process.env.APP_DATA_DIRECTORY?.trim() ||
+    path.resolve(process.cwd(), "..", "..", "app_data");
 
   const resolveAppDataRelative = (value: string): string => {
     if (!appData) {
@@ -155,7 +204,7 @@ async function runBundledPresentationExportLocked(params: {
   const appRoot = getPresentonAppRoot();
 
   const nextjsUrl =
-    process.env.NEXT_PUBLIC_URL?.trim() || "http://127.0.0.1";
+    process.env.NEXT_PUBLIC_URL?.trim() || "http://127.0.0.1:3000";
   const q = new URLSearchParams({ id: presentationId, format });
   const sessionToken = extractSessionTokenFromCookieHeader(cookieHeader);
   if (sessionToken) {
@@ -195,11 +244,19 @@ async function runBundledPresentationExportLocked(params: {
       format,
       memory: memorySnapshotMb(),
     });
+    const chromePath = findSystemBrowserPath();
     await new Promise<void>((resolve, reject) => {
+      const appDataDir =
+        process.env.APP_DATA_DIRECTORY?.trim() ||
+        path.resolve(process.cwd(), "..", "..", "app_data");
       const child = spawn(process.execPath, [entrypoint, exportTaskPath], {
         cwd: appRoot,
         stdio: ["ignore", "pipe", "pipe"],
-        env: process.env,
+        env: {
+          ...process.env,
+          APP_DATA_DIRECTORY: appDataDir,
+          ...(chromePath ? { PUPPETEER_EXECUTABLE_PATH: chromePath } : {}),
+        },
       });
       const stderr = new BoundedTextBuffer();
       const stdout = new BoundedTextBuffer();

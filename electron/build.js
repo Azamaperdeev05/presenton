@@ -979,10 +979,19 @@ const config = {
 }
 
 const effectiveMacTarget = macTarget || "dmg"
-const targets =
-  process.platform === "darwin"
-    ? builder.Platform.MAC.createTarget([effectiveMacTarget])
-    : undefined
+const configuredTarget = process.env.PRESENTON_TARGET
+const targets = (() => {
+  if (configuredTarget === "win" || process.platform === "win32") {
+    return builder.Platform.WINDOWS.createTarget(["nsis"])
+  }
+  if (configuredTarget === "linux" || process.platform === "linux") {
+    return builder.Platform.LINUX.createTarget(["AppImage", "deb"])
+  }
+  if (configuredTarget === "mac" || process.platform === "darwin") {
+    return builder.Platform.MAC.createTarget([effectiveMacTarget])
+  }
+  return undefined
+})()
 
 assertSourceBundleResourcesReady()
 
