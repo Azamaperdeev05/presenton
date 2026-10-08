@@ -937,8 +937,8 @@ const config = {
     additionalArguments: masSigningExtraArgs,
   },
   linux: {
-    artifactName: "Presenton-${version}.${ext}",
-    target: ["AppImage", "deb"],
+    artifactName: "Presenton-${version}-${arch}.${ext}",
+    target: ["AppImage", "deb", "rpm"],
     icon: "build/icons",
     category: "Office",
   },
@@ -946,10 +946,18 @@ const config = {
     afterInstall: "build/after-install.tpl",
   },
   win: {
-    target: ["nsis", "appx"],
+    target: ["nsis", "msi", "portable", "appx"],
     icon: "build/icon.ico",
-    artifactName: "Presenton-${version}.${ext}",
+    artifactName: "Presenton-${version}-${arch}.${ext}",
     executableName: "Presenton",
+  },
+  msi: {
+    oneClick: false,
+    perMachine: true,
+    runAfterFinish: true,
+  },
+  portable: {
+    artifactName: "Presenton-Portable-${version}-${arch}.${ext}",
   },
   nsis: {
     oneClick: false,
@@ -981,11 +989,18 @@ const config = {
 const effectiveMacTarget = macTarget || "dmg"
 const configuredTarget = process.env.PRESENTON_TARGET
 const targets = (() => {
+  const winTargets = process.env.PRESENTON_WIN_TARGETS
+    ? process.env.PRESENTON_WIN_TARGETS.split(",").map((s) => s.trim())
+    : ["nsis"]
+  const linuxTargets = process.env.PRESENTON_LINUX_TARGETS
+    ? process.env.PRESENTON_LINUX_TARGETS.split(",").map((s) => s.trim())
+    : ["AppImage", "deb"]
+
   if (configuredTarget === "win" || process.platform === "win32") {
-    return builder.Platform.WINDOWS.createTarget(["nsis"])
+    return builder.Platform.WINDOWS.createTarget(winTargets)
   }
   if (configuredTarget === "linux" || process.platform === "linux") {
-    return builder.Platform.LINUX.createTarget(["AppImage", "deb"])
+    return builder.Platform.LINUX.createTarget(linuxTargets)
   }
   if (configuredTarget === "mac" || process.platform === "darwin") {
     return builder.Platform.MAC.createTarget([effectiveMacTarget])
