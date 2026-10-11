@@ -887,3 +887,50 @@ def test_default_smart_slide_count_is_bounded():
     assert resolve_smart_slide_count(0) == 8
     assert resolve_smart_slide_count(None) == 8
     assert resolve_smart_slide_count(200) == 50
+
+
+def test_smart_deck_parser_normalizes_title_slide_when_not_requested():
+    response = (
+        "<!-- PRESENTATION_TITLE: Polyglot Deck -->"
+        "<!-- SLIDE_START -->"
+        + _smart_slide_html("Title Slide", "title")
+        + "<!-- SLIDE_END -->"
+        "<!-- SLIDE_START -->"
+        + _smart_slide_html("Content Slide", "content")
+        + "<!-- SLIDE_END -->"
+    )
+
+    title, slides = parse_smart_presentation_html(
+        response,
+        expected_slide_count=2,
+        include_title_slide=False,
+        include_table_of_contents=False,
+    )
+
+    assert title == "Polyglot Deck"
+    assert len(slides) == 2
+    assert slides[0]["slide_type"] == "content"
+    assert slides[1]["slide_type"] == "content"
+
+
+def test_smart_deck_parser_handles_repeated_title_slide_types_gracefully():
+    response = (
+        "<!-- PRESENTATION_TITLE: Sectioned Deck -->"
+        "<!-- SLIDE_START -->"
+        + _smart_slide_html("Main Title", "title")
+        + "<!-- SLIDE_END -->"
+        "<!-- SLIDE_START -->"
+        + _smart_slide_html("Section 1 Title", "title")
+        + "<!-- SLIDE_END -->"
+    )
+
+    title, slides = parse_smart_presentation_html(
+        response,
+        expected_slide_count=2,
+        include_title_slide=True,
+        include_table_of_contents=False,
+    )
+
+    assert title == "Sectioned Deck"
+    assert slides[0]["slide_type"] == "title"
+    assert slides[1]["slide_type"] == "content"

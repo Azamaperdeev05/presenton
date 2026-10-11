@@ -169,7 +169,7 @@ const UploadPage = ({
     verbosity: VerbosityType.Standard,
     instructions: "",
     includeTableOfContents: false,
-    includeTitleSlide: false,
+    includeTitleSlide: true,
     webSearch: false,
   });
 

@@ -43,7 +43,7 @@ async def safe_sse_stream(
                 return
             if isinstance(item, Exception):
                 exc = item
-                logger.exception("SSE stream failed after response started")
+                logger.error("SSE stream failed after response started", exc_info=exc)
                 if on_error:
                     try:
                         await on_error()

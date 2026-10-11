@@ -50,7 +50,7 @@ const DEFAULT_OUTLINE_CONFIG: PresentationConfig = {
   verbosity: VerbosityType.Standard,
   instructions: "",
   includeTableOfContents: false,
-  includeTitleSlide: false,
+  includeTitleSlide: true,
   webSearch: false,
 };
 

@@ -3,11 +3,14 @@ from __future__ import annotations
 import asyncio
 import html as html_module
 import json
+import logging
 import re
 import time
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import replace
 from typing import Any, Optional
+
+logger = logging.getLogger(__name__)
 
 import llmai
 from fastapi import HTTPException
@@ -536,21 +539,22 @@ def _validate_slide_position(
     include_title_slide: bool,
     include_table_of_contents: bool,
 ) -> None:
-    slide_type = slide["slide_type"]
-    if index == 0 and include_title_slide and slide_type != "title":
-        raise HTTPException(status_code=400, detail="The first Smart slide must be a title slide")
-    if slide_type == "title" and (not include_title_slide or index != 0):
-        raise HTTPException(status_code=400, detail="The model repeated the Smart title slide")
+    slide_type = (slide.get("slide_type") or "content").casefold()
     toc_index = 1 if include_title_slide else 0
-    if include_table_of_contents and index == toc_index and slide_type not in {
-        "toc",
-        "table_of_contents",
-    }:
-        raise HTTPException(status_code=400, detail="The Smart table of contents is missing")
-    if slide_type in {"toc", "table_of_contents"} and (
-        not include_table_of_contents or index != toc_index
-    ):
-        raise HTTPException(status_code=400, detail="The model repeated the Smart table of contents")
+
+    if index == 0:
+        if include_title_slide:
+            slide["slide_type"] = "title"
+        elif slide_type == "title":
+            slide["slide_type"] = "content"
+    else:
+        if slide_type == "title":
+            slide["slide_type"] = "content"
+
+    if include_table_of_contents and index == toc_index:
+        slide["slide_type"] = "toc"
+    elif slide_type in {"toc", "table_of_contents"} and index != toc_index:
+        slide["slide_type"] = "content"
 
 
 class SmartSlideStreamParser:
@@ -584,18 +588,18 @@ def parse_smart_presentation_html(
 ) -> tuple[str, list[dict[str, str]]]:
     candidate = _FENCE_PATTERN.sub("", response).strip()
     title_match = SMART_DECK_TITLE_RE.search(candidate)
-    if title_match is None or not title_match.group(1).strip():
-        raise HTTPException(status_code=400, detail="The Smart deck title marker is missing")
-    starts = len(re.findall(r"<!--\s*SLIDE_START\s*-->", candidate, re.IGNORECASE))
-    ends = len(re.findall(r"<!--\s*SLIDE_END\s*-->", candidate, re.IGNORECASE))
+    deck_title = (
+        title_match.group(1).strip()
+        if (title_match is not None and title_match.group(1).strip())
+        else ""
+    )
     blocks = [match.group(1).strip() for match in SMART_SLIDE_BLOCK_RE.finditer(candidate)]
-    if starts != ends or len(blocks) != starts:
-        raise HTTPException(status_code=400, detail="The Smart slide delimiters are unmatched")
-    if len(blocks) != expected_slide_count:
+    if len(blocks) < expected_slide_count:
         raise HTTPException(
             status_code=400,
             detail=f"The model returned {len(blocks)} slides instead of {expected_slide_count}",
         )
+    blocks = blocks[:expected_slide_count]
     slides = [_slide_from_html(block, start_index + index) for index, block in enumerate(blocks)]
     for index, slide in enumerate(slides, start=start_index):
         _validate_slide_position(
@@ -604,7 +608,12 @@ def parse_smart_presentation_html(
             include_title_slide=include_title_slide,
             include_table_of_contents=include_table_of_contents,
         )
-    return title_match.group(1).strip(), slides
+    if not deck_title:
+        if start_index == 0 and slides:
+            deck_title = slides[0]["title"]
+        else:
+            deck_title = ""
+    return deck_title, slides
 
 
 def normalize_smart_deck(payload: dict[str, Any], n_slides: int) -> dict[str, Any]:
@@ -819,10 +828,11 @@ async def generate_smart_presentation(
             for slide in parser.feed(chunk):
                 index = len(accepted_slides) + len(attempt_slides)
                 if index >= n_slides:
-                    raise HTTPException(
-                        status_code=400,
-                        detail="The model generated too many Smart slides",
+                    logger.info(
+                        "Reached requested slide count (%s); skipping surplus slide",
+                        n_slides,
                     )
+                    break
                 _validate_slide_position(
                     slide,
                     index,
@@ -895,11 +905,13 @@ async def generate_smart_presentation(
                 include_table_of_contents=include_table_of_contents,
                 start_index=len(accepted_slides),
             )
-            if len(parsed_slides) != len(attempt_slides):
+            if len(parsed_slides) < len(attempt_slides):
                 raise HTTPException(
                     status_code=400,
                     detail="Incremental Smart slide parsing did not match the final deck",
                 )
+            if len(parsed_slides) > len(attempt_slides):
+                parsed_slides = parsed_slides[:len(attempt_slides)]
             title = title or parsed_title
             accepted_slides.extend(attempt_slides)
             return {"title": title, "slides": accepted_slides, "metrics": metrics}
@@ -908,6 +920,15 @@ async def generate_smart_presentation(
                 metrics_task.cancel()
                 await asyncio.gather(metrics_task, return_exceptions=True)
             last_exception = exc
+            logger.warning(
+                "Smart presentation attempt %s failed: %s (response_len=%s, attempt_slides=%s, accepted_slides=%s)",
+                _attempt,
+                exc,
+                len(streamed_response),
+                len(attempt_slides),
+                len(accepted_slides),
+                exc_info=True,
+            )
             retry_error = (
                 str(exc.detail)
                 if isinstance(exc, HTTPException)
