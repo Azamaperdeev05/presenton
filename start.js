@@ -46,9 +46,17 @@ const hasDevArg = args.includes("--dev") || args.includes("-d");
 const isDev = hasDevArg;
 const canChangeKeys = process.env.CAN_CHANGE_KEYS !== "false";
 
-const fastapiPort = 8000;
-const nextjsPort = 3000;
-const appmcpPort = 8001;
+const fastapiPort = process.env.FASTAPI_PORT
+  ? parseInt(process.env.FASTAPI_PORT, 10)
+  : 8000;
+const nextjsPort = process.env.PORT
+  ? parseInt(process.env.PORT, 10)
+  : process.env.NEXT_PORT
+  ? parseInt(process.env.NEXT_PORT, 10)
+  : 3000;
+const appmcpPort = process.env.APPMCP_PORT
+  ? parseInt(process.env.APPMCP_PORT, 10)
+  : 8001;
 
 const appDataDirectory =
   process.env.APP_DATA_DIRECTORY?.trim() || join(__dirname, "app_data");
@@ -175,6 +183,9 @@ const writeUserConfig = (config) => {
 
 // Setup node_modules for development
 const setupNodeModules = () => {
+  if (existsSync(nextjsCli)) {
+    return Promise.resolve();
+  }
   return new Promise((resolve, reject) => {
     console.log("Setting up node_modules for Next.js...");
     const npmProcess = spawn("npm", ["install"], {
@@ -498,7 +509,7 @@ const ensurePresentationExportRuntime = async () => {
 };
 
 const syncNginxConfigForDev = () => {
-  if (!isDev || !existsSync(nginxSourceConfigPath)) {
+  if (!isDev || !existsSync(nginxSourceConfigPath) || !existsSync("/etc/nginx")) {
     return;
   }
 
