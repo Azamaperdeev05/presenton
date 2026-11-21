@@ -119,13 +119,13 @@ echo "Starting Presenton backend and frontend..."
 if [ "$IS_FASTAPI_RUNNING" -eq 0 ]; then
     cd "$DIR/servers/fastapi"
     if [ -f ".venv/bin/python" ]; then
-        nohup .venv/bin/python server.py --port 8000 --reload false >> "$LOG_FILE" 2>&1 &
+        nohup .venv/bin/python server.py --port 8000 --reload false < /dev/null >> "$LOG_FILE" 2>&1 &
         echo $! > "$FASTAPI_PID_FILE"
     elif command -v uv >/dev/null 2>&1; then
-        nohup uv run python server.py --port 8000 --reload false >> "$LOG_FILE" 2>&1 &
+        nohup uv run python server.py --port 8000 --reload false < /dev/null >> "$LOG_FILE" 2>&1 &
         echo $! > "$FASTAPI_PID_FILE"
     else
-        nohup python3 server.py --port 8000 --reload false >> "$LOG_FILE" 2>&1 &
+        nohup python3 server.py --port 8000 --reload false < /dev/null >> "$LOG_FILE" 2>&1 &
         echo $! > "$FASTAPI_PID_FILE"
     fi
 fi
@@ -133,8 +133,13 @@ fi
 # 3. Start Next.js if not running
 if [ "$IS_NEXTJS_RUNNING" -eq 0 ]; then
     cd "$DIR/servers/nextjs"
-    nohup npm run dev -- -H 127.0.0.1 -p 3000 >> "$LOG_FILE" 2>&1 &
-    echo $! > "$NEXTJS_PID_FILE"
+    if [ -f "node_modules/next/dist/bin/next" ]; then
+        nohup node node_modules/next/dist/bin/next dev -H 127.0.0.1 -p 3000 < /dev/null >> "$LOG_FILE" 2>&1 &
+        echo $! > "$NEXTJS_PID_FILE"
+    else
+        nohup npm run dev -- -H 127.0.0.1 -p 3000 < /dev/null >> "$LOG_FILE" 2>&1 &
+        echo $! > "$NEXTJS_PID_FILE"
+    fi
 fi
 
 # 4. Wait for Next.js and FastAPI to become ready
